@@ -1,0 +1,8 @@
+{
+  // Cloudflare Workers (static assets only): serves the llm-forecast folder as a website.
+  "name": "llm-forecast",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./llm-forecast"
+  }
+}

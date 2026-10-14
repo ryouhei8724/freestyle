@@ -1,0 +1,846 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ローカルLLM到達予測</title>
+<meta name="description" content="オープンウェイトのLLMがClaude Opus 5.5の水準に並ぶ時期を、モデルの大きさ・公開時期・スコアの3軸で示した図と予想（2026年10月時点）。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="ローカルLLM到達予測">
+<meta property="og:description" content="オープンウェイトのLLMがClaude Opus 5.5の水準に並ぶ時期を、モデルの大きさ・公開時期・スコアの3軸で示した図と予想（2026年10月時点）。">
+<meta name="color-scheme" content="light dark">
+<style>
+/* Tokens the page's own styles read. Light first; dark redefines the same names. */
+:root {
+  color-scheme: light;
+  --font-anthropic-sans: system-ui, -apple-system, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", Meiryo, sans-serif;
+  --font-anthropic-serif: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", "Times New Roman", serif;
+  --color-bg: #f6f5f1;
+  --color-panel: #fdfdfb;
+  --color-fg: #1a1a19;
+  --color-fg-muted: #5c5b57;
+  --color-border-line: #e3e2db;
+  --color-link: #1c5cab;
+  --color-bad: #d03b3b;
+  --color-skeleton: #ecebe5;
+  --cds-chart-muted: #8a8882;
+  --cds-chart-grid: #ebeae4;
+  --cds-chart-axis: #c3c2b7;
+  --cds-chart-reference: #8a8882;
+  --cds-surface-popover: #ffffff;
+  --cds-border: #d9d8d0;
+  --cds-shadow-popover: 0 6px 20px rgba(20, 20, 18, 0.1);
+  --cds-text-secondary: #5c5b57;
+  --cds-radius: 10px;
+  --cds-pad-xs: 6px;
+  --cds-pad-sm: 10px;
+  --cds-pad-md: 14px;
+  --cds-pad-lg: 20px;
+  --cds-pad-xl: 28px;
+  --cds-gap-xs: 4px;
+  --cds-gap-sm: 8px;
+  --cds-gap-md: 16px;
+  --cds-gap-lg: 24px;
+  --cds-gap-xl: 40px;
+  --cds-font-size-caption: 12px;
+  --cds-font-size-body: 15px;
+  --cds-font-size-heading: 18px;
+  --cds-font-size-title: 30px;
+  --cds-font-weight-medium: 600;
+  --cds-dur-slow: 300ms;
+  --cds-ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --color-bg: #0f0f0e;
+    --color-panel: #1a1a19;
+    --color-fg: #f0efec;
+    --color-fg-muted: #b5b4ab;
+    --color-border-line: #2f2f2c;
+    --color-link: #86b6ef;
+    --color-bad: #e66767;
+    --color-skeleton: #2a2a27;
+    --cds-chart-grid: #2a2a28;
+    --cds-chart-axis: #45453f;
+    --cds-surface-popover: #232321;
+    --cds-border: #3a3a36;
+    --cds-shadow-popover: 0 6px 20px rgba(0, 0, 0, 0.45);
+    --cds-text-secondary: #b5b4ab;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-bg: #0f0f0e;
+  --color-panel: #1a1a19;
+  --color-fg: #f0efec;
+  --color-fg-muted: #b5b4ab;
+  --color-border-line: #2f2f2c;
+  --color-link: #86b6ef;
+  --color-bad: #e66767;
+  --color-skeleton: #2a2a27;
+  --cds-chart-grid: #2a2a28;
+  --cds-chart-axis: #45453f;
+  --cds-surface-popover: #232321;
+  --cds-border: #3a3a36;
+  --cds-shadow-popover: 0 6px 20px rgba(0, 0, 0, 0.45);
+  --cds-text-secondary: #b5b4ab;
+}
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-family: var(--font-anthropic-sans); }
+#dash-root {
+  padding-block: 32px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+@media (min-width: 720px) {
+  #dash-root {
+    padding-left: max(32px, env(safe-area-inset-left, 0px));
+    padding-right: max(32px, env(safe-area-inset-right, 0px));
+  }
+}
+.dash-skeleton { color: transparent !important; background: var(--color-skeleton); border-radius: 4px; }
+@media (prefers-reduced-motion: no-preference) {
+  .dash-skeleton { animation: lx-pulse 1.4s ease-in-out infinite; }
+  @keyframes lx-pulse { 50% { opacity: 0.55; } }
+}
+.lx a { color: var(--color-link); text-underline-offset: 2px; }
+.lx a:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 2px; border-radius: 2px; }
+.lx .lx-tile-v { font-size: 26px; }
+.lx-sources { font-size: var(--cds-font-size-caption); line-height: 1.8; }
+.lx-src-host { color: var(--color-fg-muted); }
+</style>
+<script src="vendor/d3.v7.9.0.min.js"></script>
+<script src="runtime.js"></script>
+</head>
+<body>
+<main id="dash-root">
+<style>
+/* Layout: header + takeaway, four forecast tiles, one two-panel bubble chart (past | forecast) on a shared score axis, then table views and notes. */
+.lx {
+  --lx-t-gpu24: #86b6ef;
+  --lx-t-ws128: #3987e5;
+  --lx-t-ws512: #1c5cab;
+  --lx-t-dc: #0d366b;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-gap-xl);
+  max-width: 76rem;
+  margin-inline: auto;
+  font-family: var(--font-anthropic-sans);
+  color: var(--color-fg);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .lx {
+    --lx-t-gpu24: #184f95;
+    --lx-t-ws128: #2a78d6;
+    --lx-t-ws512: #6da7ec;
+    --lx-t-dc: #b7d3f6;
+  }
+}
+:root[data-theme="dark"] .lx {
+  --lx-t-gpu24: #184f95;
+  --lx-t-ws128: #2a78d6;
+  --lx-t-ws512: #6da7ec;
+  --lx-t-dc: #b7d3f6;
+}
+.lx-head { display: flex; flex-direction: column; gap: var(--cds-gap-sm); }
+.lx-title { margin: 0; font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); text-wrap: balance; }
+.lx-lede { margin: 0; max-width: 48rem; font-size: var(--cds-font-size-body); line-height: 1.75; color: var(--color-fg-muted); }
+.lx .lx-lede b { font-weight: 600; color: var(--color-fg); }
+.lx-section { display: flex; flex-direction: column; gap: var(--cds-gap-md); min-width: 0; }
+.lx-h2 { margin: 0; font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); text-wrap: balance; }
+.lx-h3 { margin: 0; font-size: var(--cds-font-size-body); font-weight: var(--cds-font-weight-medium); }
+.lx-note { margin: 0; font-size: var(--cds-font-size-caption); line-height: 1.6; color: var(--color-fg-muted); }
+.lx-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: var(--cds-gap-md); }
+.lx-tile {
+  display: flex; flex-direction: column; gap: var(--cds-gap-xs); min-width: 0;
+  background: var(--color-panel); border: 1px solid var(--color-border-line);
+  border-radius: var(--cds-radius); padding: var(--cds-pad-lg);
+}
+.lx-tile-k { display: flex; align-items: center; gap: var(--cds-gap-sm); font-size: var(--cds-font-size-body); font-weight: var(--cds-font-weight-medium); }
+.lx-sw { flex: none; width: 0.75rem; height: 0.75rem; border-radius: 50%; background: var(--sw); }
+.lx-tile-hw { min-height: 2.8em; font-size: var(--cds-font-size-caption); line-height: 1.4; color: var(--color-fg-muted); }
+.lx-tile-v { margin-top: var(--cds-gap-xs); font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); line-height: 1.2; }
+.lx-tile-r, .lx-tile-s { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.lx-card {
+  display: flex; flex-direction: column; gap: var(--cds-gap-md); min-width: 0;
+  background: var(--color-panel); border: 1px solid var(--color-border-line);
+  border-radius: var(--cds-radius); padding: var(--cds-pad-lg);
+}
+.lx-legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cds-gap-sm) var(--cds-gap-lg); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.lx-legend-item { display: inline-flex; align-items: center; gap: var(--cds-gap-xs); }
+.lx-legend-item svg { flex: none; overflow: visible; }
+.lx-panels { position: relative; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: var(--cds-gap-lg); }
+.lx-panel { margin: 0; min-width: 0; display: flex; flex-direction: column; gap: var(--cds-gap-xs); }
+.lx-panel figcaption { font-size: var(--cds-font-size-caption); font-weight: var(--cds-font-weight-medium); color: var(--color-fg-muted); }
+.lx-svgbox { min-height: 420px; }
+.lx-svgbox svg { display: block; overflow: visible; }
+.lx svg [tabindex]:focus { outline: none; }
+.lx svg [tabindex]:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 2px; }
+.lx-tick { font-family: var(--font-anthropic-sans); font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; fill: var(--color-fg-muted); }
+.lx-lbl {
+  font-family: var(--font-anthropic-sans); font-size: var(--cds-font-size-caption); fill: var(--color-fg);
+  paint-order: stroke; stroke: var(--color-panel); stroke-width: 3px; stroke-linejoin: round; pointer-events: none;
+}
+.lx-lbl-muted { fill: var(--color-fg-muted); }
+.lx-tip {
+  position: absolute; z-index: 5; max-width: 18rem; pointer-events: none;
+  background: var(--cds-surface-popover); border: 1px solid var(--cds-border);
+  border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover);
+  padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); line-height: 1.55;
+}
+.lx-tip[hidden] { display: none; }
+.lx-tip-h, .lx-tip-p { color: var(--cds-text-secondary); }
+.lx-tip-row { display: flex; align-items: baseline; gap: var(--cds-gap-xs); flex-wrap: wrap; }
+.lx-tip-key { flex: none; align-self: center; width: 0.75rem; height: 2px; }
+.lx .lx-tip-v { font-weight: 600; color: var(--color-fg); }
+.lx-tablebox { max-height: 28rem; overflow: auto; }
+.lx-table { width: 100%; border-collapse: collapse; font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; }
+.lx-table th {
+  position: sticky; top: 0; z-index: 1; background: var(--color-panel); text-align: left; white-space: nowrap;
+  font-weight: var(--cds-font-weight-medium); color: var(--color-fg-muted);
+  padding: var(--cds-pad-xs) var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line);
+}
+.lx-table td { padding: var(--cds-pad-xs) var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); vertical-align: top; }
+.lx-table .num { text-align: right; }
+.lx-table td.wrap { min-width: 16rem; }
+.lx-table td.nowrap { white-space: nowrap; }
+.lx-list { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: var(--cds-gap-xs); font-size: var(--cds-font-size-body); line-height: 1.7; max-width: 52rem; }
+.lx-fail { display: flex; align-items: center; justify-content: center; gap: var(--cds-gap-xs); min-height: 420px; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.lx-fail::before { content: ""; width: 0.375rem; height: 0.375rem; border-radius: 50%; background: var(--color-bad); }
+.lx [data-dash-source-state=empty] { color: transparent; }
+.lx [data-dash-source-state=refreshing] { opacity: 0.5; transition: opacity var(--cds-dur-slow); }
+</style>
+
+<div class="lx" id="lx-root">
+  <header class="lx-head" id="top">
+    <h1 class="lx-title">ローカルLLM到達予測</h1>
+    <p class="lx-lede">オープンウェイトの最上位は<b class="dash-skeleton" data-source="forecast" data-field="start_score" data-where="tier=dc">—</b>点、Claude Opus 5.5は<b class="dash-skeleton" data-source="models" data-field="score" data-where="model=Claude Opus 5.5">—</b>点です。手元のマシンでOpus 5.5並みのモデルが動くのは、<span class="dash-skeleton" data-source="forecast" data-field="tier_short" data-where="tier=ws512">—</span>で<b class="dash-skeleton" data-source="forecast" data-field="reach_label" data-where="tier=ws512">—</b>、<span class="dash-skeleton" data-source="forecast" data-field="tier_short" data-where="tier=gpu24">—</span>で<b class="dash-skeleton" data-source="forecast" data-field="reach_label" data-where="tier=gpu24">—</b>と予想します。</p>
+  </header>
+
+  <section class="lx-section" id="tiles">
+    <h2 class="lx-h2">マシン別の到達時期</h2>
+    <p class="lx-note">総合指数で<span class="dash-skeleton" data-source="forecast" data-field="target_score" data-where="tier=dc">—</span>点に並ぶ時期の予想です。Claudeの推定で、実測ではありません。</p>
+    <div class="lx-tiles">
+      <article class="lx-tile">
+        <div class="lx-tile-k"><i class="lx-sw" style="--sw: var(--lx-t-dc)"></i><span class="dash-skeleton" data-source="forecast" data-field="tier_label" data-where="tier=dc">—</span></div>
+        <div class="lx-tile-hw dash-skeleton" data-source="forecast" data-field="hardware" data-where="tier=dc">—</div>
+        <div class="lx-tile-v dash-skeleton" data-source="forecast" data-field="reach_label" data-where="tier=dc">—</div>
+        <div class="lx-tile-r"><span class="dash-skeleton" data-source="forecast" data-field="range_label" data-where="tier=dc">—</span>・今から<span class="dash-skeleton" data-source="forecast" data-field="months_label" data-where="tier=dc">—</span></div>
+        <div class="lx-tile-s">現在の最高は<span class="dash-skeleton" data-source="forecast" data-field="start_model" data-where="tier=dc">—</span>の<span class="dash-skeleton" data-source="forecast" data-field="start_score" data-where="tier=dc">—</span>点</div>
+      </article>
+      <article class="lx-tile">
+        <div class="lx-tile-k"><i class="lx-sw" style="--sw: var(--lx-t-ws512)"></i><span class="dash-skeleton" data-source="forecast" data-field="tier_label" data-where="tier=ws512">—</span></div>
+        <div class="lx-tile-hw dash-skeleton" data-source="forecast" data-field="hardware" data-where="tier=ws512">—</div>
+        <div class="lx-tile-v dash-skeleton" data-source="forecast" data-field="reach_label" data-where="tier=ws512">—</div>
+        <div class="lx-tile-r"><span class="dash-skeleton" data-source="forecast" data-field="range_label" data-where="tier=ws512">—</span>・今から<span class="dash-skeleton" data-source="forecast" data-field="months_label" data-where="tier=ws512">—</span></div>
+        <div class="lx-tile-s">現在の最高は<span class="dash-skeleton" data-source="forecast" data-field="start_model" data-where="tier=ws512">—</span>の<span class="dash-skeleton" data-source="forecast" data-field="start_score" data-where="tier=ws512">—</span>点</div>
+      </article>
+      <article class="lx-tile">
+        <div class="lx-tile-k"><i class="lx-sw" style="--sw: var(--lx-t-ws128)"></i><span class="dash-skeleton" data-source="forecast" data-field="tier_label" data-where="tier=ws128">—</span></div>
+        <div class="lx-tile-hw dash-skeleton" data-source="forecast" data-field="hardware" data-where="tier=ws128">—</div>
+        <div class="lx-tile-v dash-skeleton" data-source="forecast" data-field="reach_label" data-where="tier=ws128">—</div>
+        <div class="lx-tile-r"><span class="dash-skeleton" data-source="forecast" data-field="range_label" data-where="tier=ws128">—</span>・今から<span class="dash-skeleton" data-source="forecast" data-field="months_label" data-where="tier=ws128">—</span></div>
+        <div class="lx-tile-s">現在の最高は<span class="dash-skeleton" data-source="forecast" data-field="start_model" data-where="tier=ws128">—</span>の<span class="dash-skeleton" data-source="forecast" data-field="start_score" data-where="tier=ws128">—</span>点</div>
+      </article>
+      <article class="lx-tile">
+        <div class="lx-tile-k"><i class="lx-sw" style="--sw: var(--lx-t-gpu24)"></i><span class="dash-skeleton" data-source="forecast" data-field="tier_label" data-where="tier=gpu24">—</span></div>
+        <div class="lx-tile-hw dash-skeleton" data-source="forecast" data-field="hardware" data-where="tier=gpu24">—</div>
+        <div class="lx-tile-v dash-skeleton" data-source="forecast" data-field="reach_label" data-where="tier=gpu24">—</div>
+        <div class="lx-tile-r"><span class="dash-skeleton" data-source="forecast" data-field="range_label" data-where="tier=gpu24">—</span>・今から<span class="dash-skeleton" data-source="forecast" data-field="months_label" data-where="tier=gpu24">—</span></div>
+        <div class="lx-tile-s">現在の最高は<span class="dash-skeleton" data-source="forecast" data-field="start_model" data-where="tier=gpu24">—</span>の<span class="dash-skeleton" data-source="forecast" data-field="start_score" data-where="tier=gpu24">—</span>点</div>
+      </article>
+    </div>
+  </section>
+
+  <section class="lx-card" id="chart">
+    <h2 class="lx-h2">モデルの大きさ・時期・スコア</h2>
+    <p class="lx-note">縦軸はArtificial Analysisの総合指数、横軸は公開日です。円の面積は総パラメータ数で、色は動かせるマシンの区分（濃いほど大きなマシンが必要）を表します。クローズドモデルは規模が非公開のため菱形で示しています。</p>
+    <div class="lx-legend" data-source="models forecast"></div>
+    <div class="lx-panels" data-source="models forecast frontier">
+      <figure class="lx-panel">
+        <figcaption>これまで（実績）</figcaption>
+        <div class="lx-svgbox dash-skeleton" id="lx-past"></div>
+      </figure>
+      <figure class="lx-panel">
+        <figcaption>今後（予想）</figcaption>
+        <div class="lx-svgbox dash-skeleton" id="lx-future"></div>
+      </figure>
+      <div class="lx-tip" hidden></div>
+    </div>
+  </section>
+
+  <section class="lx-card" id="data">
+    <h2 class="lx-h2">データ</h2>
+    <h3 class="lx-h3">モデル一覧</h3>
+    <div class="lx-tablebox">
+      <table class="lx-table" id="lx-tbl-models" data-source="models" data-row-key="model">
+        <thead><tr>
+          <th data-field="model">モデル</th>
+          <th data-field="lab">開発元</th>
+          <th data-field="kind">種類</th>
+          <th data-field="released">公開日</th>
+          <th data-field="score" class="num">総合指数</th>
+          <th data-field="params_b" class="num">総パラメータ（B）</th>
+          <th data-field="tier_label">動かせる環境</th>
+          <th data-field="note">備考</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <h3 class="lx-h3">予想の内訳</h3>
+    <div class="lx-tablebox">
+      <table class="lx-table" id="lx-tbl-forecast" data-source="forecast" data-row-key="tier">
+        <thead><tr>
+          <th data-field="tier_label">マシンの区分</th>
+          <th data-field="hardware">例</th>
+          <th data-field="start_model">現在の最高</th>
+          <th data-field="start_score" class="num">現在の点</th>
+          <th data-field="range_label">到達時期の幅</th>
+          <th data-field="months_label">今から</th>
+          <th data-field="basis">根拠</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="lx-section" id="notes">
+    <h2 class="lx-h2">読み方と前提</h2>
+    <ul class="lx-list">
+      <li>縦軸はArtificial Analysis総合指数の現行版（v4.3系）です。版が変わると数値は比べられないため、この版の値が見つかったモデルだけを載せています。</li>
+      <li>一部のスコアは二次情報から取っています（表の備考を参照）。DeepSeek V4.1 Flashは規模の報告が分かれています。</li>
+      <li>予想の線と帯はClaudeの推定です。オープンモデルは最前線に数か月遅れて追いつくというEpoch AIの分析と、各マシンのメモリに載るモデルの大きさをもとにしています。</li>
+      <li>総合点が並んでも、長い作業や仕上がりの質の体感が追いつくまでには、さらに数か月かかる可能性があります。</li>
+      <li>ローカルで動かす場合は圧縮（量子化）が必要で、その分スコアより性能が下がります。</li>
+    </ul>
+  </section>
+
+  <section class="lx-section" id="sources">
+    <h2 class="lx-h2">出典</h2>
+    <ul class="lx-list lx-sources" id="lx-sources"></ul>
+    <p class="lx-note">2026年10月14日時点の公開情報をもとに作成しました。予想の部分はClaude（Anthropic）による推定です。データは data/models.csv と data/forecast.csv にあります。</p>
+  </section>
+</div>
+
+<script>
+dash.calc('frontier', {
+  inputs: ['models'],
+  title: '最前線の伸び（予想の幅）',
+  description: 'クローズドモデルの最高点から、ひと月あたり1.0〜2.5点の伸びを仮定して9か月先まで延ばしたClaudeの推定。',
+  fn: (models) => {
+    const closed = models.filter((r) => r.kind === 'クローズド');
+    const top = closed.reduce((a, b) => (Number(b.score) > Number(a.score) ? b : a));
+    const s = Number(top.score);
+    const d0 = new Date(String(top.released).slice(0, 10) + 'T00:00:00Z');
+    const rows = [];
+    for (let m = 0; m <= 9; m++) {
+      const d = new Date(Date.UTC(d0.getUTCFullYear(), d0.getUTCMonth() + m, d0.getUTCDate()));
+      rows.push({ date: d.toISOString().slice(0, 10), low: s + 1.0 * m, high: s + 2.5 * m, from_model: top.model });
+    }
+    return rows;
+  }
+});
+
+(function () {
+  const root = document.getElementById('lx-root');
+  const panels = root.querySelector('.lx-panels');
+  const tip = root.querySelector('.lx-tip');
+  const pastBox = root.querySelector('#lx-past');
+  const futureBox = root.querySelector('#lx-future');
+  const legend = root.querySelector('.lx-legend');
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  const TIER = { dc: 'var(--lx-t-dc)', ws512: 'var(--lx-t-ws512)', ws128: 'var(--lx-t-ws128)', gpu24: 'var(--lx-t-gpu24)' };
+  const tierColor = (t) => TIER[t] || 'var(--cds-chart-muted)';
+  const parseDay = (s) => new Date(String(s).slice(0, 10) + 'T00:00:00Z');
+  const fmtDay = (d) => d.getUTCFullYear() + '年' + (d.getUTCMonth() + 1) + '月' + d.getUTCDate() + '日';
+  const fmtComma = d3.format(',');
+  const fmtStep = d3.format('.1f');
+
+
+  function el(parent, tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    parent.appendChild(e);
+    return e;
+  }
+  function svgEl(parent, tag, attrs) {
+    const e = document.createElementNS(SVGNS, tag);
+    Object.keys(attrs || {}).forEach((k) => e.setAttribute(k, attrs[k]));
+    parent.appendChild(e);
+    return e;
+  }
+  function rowWhere(rows, where) {
+    const i = where.indexOf('=');
+    const k = decodeURIComponent(where.slice(0, i));
+    const v = decodeURIComponent(where.slice(i + 1));
+    return rows.find((r) => String(r[k]) === v);
+  }
+  function fillMarks(id, d) {
+    root.querySelectorAll('[data-source="' + id + '"][data-field][data-where]').forEach((node) => {
+      if (d.status === 'ok') {
+        const r = rowWhere(d.data, node.getAttribute('data-where'));
+        node.textContent = r ? String(r[node.getAttribute('data-field')]) : '—';
+        node.classList.remove('dash-skeleton');
+      } else {
+        node.textContent = '—';
+        node.classList.toggle('dash-skeleton', d.status === 'loading');
+      }
+    });
+  }
+  function fillTable(table, rows, keyCol) {
+    const cols = Array.from(table.querySelectorAll('th')).map((th) => th.getAttribute('data-field'));
+    const numeric = new Set(Array.from(table.querySelectorAll('th.num')).map((th) => th.getAttribute('data-field')));
+    const tb = table.querySelector('tbody');
+    tb.textContent = '';
+    rows.forEach((r) => {
+      const tr = el(tb, 'tr');
+      if (keyCol) tr.setAttribute('data-key', String(r[keyCol]));
+      cols.forEach((c) => {
+        const cls = numeric.has(c) ? 'num' : (c === 'note' || c === 'basis' || c === 'hardware') ? 'wrap' : 'nowrap';
+        el(tr, 'td', cls, r[c] == null ? '' : String(r[c]));
+      });
+    });
+  }
+
+  function tipShow(build, x, y) {
+    tip.textContent = '';
+    build(tip);
+    tip.hidden = false;
+    const pw = panels.clientWidth;
+    const tw = tip.offsetWidth;
+    const th = tip.offsetHeight;
+    let left = x + 14;
+    let top = y - th - 12;
+    if (left + tw > pw) left = Math.max(0, x - tw - 14);
+    if (top < 0) top = y + 14;
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  }
+  function tipHide() { tip.hidden = true; }
+  function boxOffset(box) {
+    const pr = panels.getBoundingClientRect();
+    const br = box.getBoundingClientRect();
+    return [br.left - pr.left, br.top - pr.top];
+  }
+
+  function modelTip(r) {
+    return (t) => {
+      el(t, 'div', 'lx-tip-h', fmtDay(r.d) + '・' + r.lab);
+      const v = el(t, 'div', 'lx-tip-row');
+      if (r.open) el(v, 'span', 'lx-tip-key').style.background = tierColor(r.tier);
+      el(v, 'span', 'lx-tip-v', r.s + '点');
+      el(v, 'span', null, r.model);
+      el(t, 'div', 'lx-tip-p', Number.isFinite(r.p)
+        ? '総パラメータ ' + fmtComma(r.p) + 'B' + (r.active_b ? '（稼働 ' + fmtComma(Number(r.active_b)) + 'B）' : '')
+        : 'パラメータ数は非公開');
+      el(t, 'div', 'lx-tip-p', '動かせる環境：' + r.tier_label);
+      if (r.note) el(t, 'div', 'lx-tip-p', r.note);
+    };
+  }
+  function tierTip(r) {
+    return (t) => {
+      el(t, 'div', 'lx-tip-h', r.tier_label);
+      const v = el(t, 'div', 'lx-tip-row');
+      el(v, 'span', 'lx-tip-key').style.background = tierColor(r.tier);
+      el(v, 'span', 'lx-tip-v', r.reach_label);
+      el(v, 'span', null, '（' + r.range_label + '）');
+      el(t, 'div', 'lx-tip-p', '例：' + r.hardware);
+      el(t, 'div', 'lx-tip-p', '現在の最高：' + r.start_model + ' ' + r.start_score + '点、目標 ' + r.target_score + '点');
+      el(t, 'div', 'lx-tip-p', '今から' + r.months_label);
+      el(t, 'div', 'lx-tip-p', r.basis);
+    };
+  }
+  function frontierTip(fr) {
+    return (t) => {
+      const last = fr[fr.length - 1];
+      el(t, 'div', 'lx-tip-h', 'クローズド最前線の伸び（予想の幅）');
+      el(t, 'div', 'lx-tip-p', fr[0].from_model + 'の' + fr[0].low + '点から、ひと月あたり' + fmtStep(fr[1].low - fr[0].low) + '〜' + fmtStep(fr[1].high - fr[0].high) + '点の伸びを仮定');
+      const v = el(t, 'div', 'lx-tip-row');
+      el(v, 'span', null, fmtDay(last.d) + 'に');
+      el(v, 'span', 'lx-tip-v', fmtStep(last.low) + '〜' + fmtStep(last.high) + '点');
+    };
+  }
+
+  function glyph(kind) {
+    const s = document.createElementNS(SVGNS, 'svg');
+    s.setAttribute('width', kind === 'size' || kind === 'forecast' ? 26 : 14);
+    s.setAttribute('height', 14);
+    s.setAttribute('aria-hidden', 'true');
+    if (kind === 'closed' || kind === 'target') {
+      const p = svgEl(s, 'path', { d: d3.symbol(d3.symbolDiamond, 60)(), transform: 'translate(7,7)' });
+      p.style.fill = kind === 'target' ? 'var(--color-fg)' : 'var(--color-panel)';
+      p.style.stroke = kind === 'target' ? 'var(--color-panel)' : 'var(--cds-chart-muted)';
+      p.style.strokeWidth = '1.5';
+    } else if (kind === 'forecast') {
+      const l = svgEl(s, 'line', { x1: 1, y1: 7, x2: 15, y2: 7, 'stroke-width': 2, 'stroke-dasharray': '4 3' });
+      l.style.stroke = 'var(--color-fg-muted)';
+      const r = svgEl(s, 'rect', { x: 15, y: 3, width: 10, height: 8, rx: 4 });
+      r.style.fill = 'var(--color-fg-muted)';
+      r.style.opacity = '0.45';
+    } else if (kind === 'band') {
+      const r = svgEl(s, 'rect', { x: 1, y: 2, width: 12, height: 10, rx: 2 });
+      r.style.fill = 'var(--cds-chart-muted)';
+      r.style.opacity = '0.3';
+    } else if (kind === 'size') {
+      [[4, 9, 3], [17, 7, 7]].forEach(([cx, cy, rr]) => {
+        const c = svgEl(s, 'circle', { cx: cx, cy: cy, r: rr, 'stroke-width': 1.5 });
+        c.style.fill = 'var(--cds-chart-muted)';
+        c.style.fillOpacity = '0.35';
+        c.style.stroke = 'var(--cds-chart-muted)';
+      });
+    }
+    return s;
+  }
+  function legendItem(node, text) {
+    const it = el(legend, 'span', 'lx-legend-item');
+    it.appendChild(node);
+    el(it, 'span', null, text);
+  }
+  function drawLegend(models, forecast, target) {
+    legend.textContent = '';
+    forecast.forEach((r) => {
+      const sw = document.createElement('i');
+      sw.className = 'lx-sw';
+      sw.style.setProperty('--sw', tierColor(r.tier));
+      legendItem(sw, r.tier_short);
+    });
+    legendItem(glyph('closed'), 'クローズド（規模は非公開）');
+    legendItem(glyph('target'), target.model + '（基準）');
+    legendItem(glyph('forecast'), '到達予想（線は中心、帯は時期の幅）');
+    legendItem(glyph('band'), '最前線の伸び（予想）');
+    const open = models.filter((r) => r.open);
+    legendItem(glyph('size'), '円の面積＝総パラメータ数（' + fmtComma(d3.min(open, (r) => r.p)) + 'B〜' + fmtComma(d3.max(open, (r) => r.p)) + 'B）');
+  }
+
+  function frame(box, W, H, label) {
+    box.textContent = '';
+    return d3.select(box).append('svg')
+      .attr('width', '100%').attr('height', H).attr('viewBox', '0 0 ' + W + ' ' + H)
+      .attr('role', 'img').attr('aria-label', label);
+  }
+  function measure(svg, text, cls) {
+    const t = svg.append('text').attr('class', cls).text(text);
+    const w = t.node().getComputedTextLength();
+    t.remove();
+    return w;
+  }
+  function fontPx(svg) {
+    const t = svg.append('text').attr('class', 'lx-lbl').text('0');
+    const px = parseFloat(getComputedStyle(t.node()).fontSize) || 12;
+    t.remove();
+    return px;
+  }
+  function overlaps(a, b) { return a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3]; }
+  function hitsCircle(b, p) {
+    const nx = Math.max(b[0], Math.min(p.cx, b[2]));
+    const ny = Math.max(b[1], Math.min(p.cy, b[3]));
+    // Labels may overlap the rim of a large bubble (their halo keeps them readable), not its core.
+    const r = p.rad > 10 ? p.rad * 0.6 : p.rad + 1;
+    return Math.hypot(nx - p.cx, ny - p.cy) < r;
+  }
+  function axes(svg, ys, yTicks, ml, mr, mt, mb, W, H) {
+    const g = svg.append('g');
+    yTicks.forEach((v) => {
+      g.append('line').attr('x1', ml).attr('x2', W - mr).attr('y1', ys(v)).attr('y2', ys(v))
+        .style('stroke', 'var(--cds-chart-grid)').attr('stroke-width', 1);
+      g.append('text').attr('class', 'lx-tick').attr('x', ml - 8).attr('y', ys(v) + 4).attr('text-anchor', 'end').text(v);
+    });
+    g.append('line').attr('x1', ml).attr('x2', W - mr).attr('y1', H - mb).attr('y2', H - mb)
+      .style('stroke', 'var(--cds-chart-axis)').attr('stroke-width', 1);
+    g.append('text').attr('class', 'lx-tick').attr('x', 0).attr('y', mt - 12).text('総合指数');
+    return g;
+  }
+  function refLine(svg, ys, value, ml, mr, W) {
+    svg.append('line').attr('x1', ml).attr('x2', W - mr).attr('y1', ys(value)).attr('y2', ys(value))
+      .style('stroke', 'var(--cds-chart-reference)').attr('stroke-width', 1);
+  }
+
+  function drawPast(models, target, asOf, yDom) {
+    const W = Math.max(280, pastBox.clientWidth);
+    const H = 420;
+    const x0 = d3.utcMonth.floor(d3.min(models, (r) => r.d));
+    const x1 = d3.utcMonth.offset(d3.utcMonth.floor(asOf), 1);
+    const svg = frame(pastBox, W, H, fmtDay(x0) + '以降に公開された主要モデルの総合指数と規模。同じ値は下の表にあります。');
+    const yTicks = d3.range(yDom[0], yDom[1] + 1, 10);
+    const ml = Math.ceil(d3.max(yTicks, (t) => measure(svg, String(t), 'lx-tick'))) + 12;
+    const mr = 16, mt = 30, mb = 30;
+    const fs = fontPx(svg);
+    const ys = d3.scaleLinear(yDom, [H - mb, mt]);
+    const xs = d3.scaleUtc([x0, x1], [ml, W - mr]);
+    axes(svg, ys, yTicks, ml, mr, mt, mb, W, H);
+
+    const months = d3.utcMonth.range(x0, d3.utcMonth.offset(x1, 1));
+    const step = xs(d3.utcMonth.offset(x0, 1)) - xs(x0) < 46 ? 2 : 1;
+    months.filter((d, i) => i % step === 0).forEach((d, i) => {
+      const first = i === 0;
+      svg.append('text').attr('class', 'lx-tick').attr('x', xs(d)).attr('y', H - mb + 18)
+        .attr('text-anchor', first ? 'start' : 'middle')
+        .text(first || d.getUTCMonth() === 0 ? d.getUTCFullYear() + '年' + (d.getUTCMonth() + 1) + '月' : (d.getUTCMonth() + 1) + '月');
+    });
+
+    refLine(svg, ys, target.s, ml, mr, W);
+    const ref = svg.append('text').attr('class', 'lx-lbl lx-lbl-muted').attr('x', ml + 4).attr('y', ys(target.s) - 6)
+      .text(target.model + 'の水準（' + target.s + '点）');
+    const refW = ref.node().getComputedTextLength();
+
+    const open = models.filter((r) => r.open).sort((a, b) => b.p - a.p);
+    const closed = models.filter((r) => !r.open);
+    const rMax = Math.max(14, Math.min(26, W * 0.05));
+    const rs = d3.scaleSqrt([0, d3.max(open, (r) => r.p)], [0, rMax]);
+    const pts = [];
+    const gm = svg.append('g');
+    open.forEach((r) => {
+      const p = { r: r, cx: xs(r.d), cy: ys(r.s), rad: Math.max(4, rs(r.p)) };
+      pts.push(p);
+      gm.append('circle').attr('cx', p.cx).attr('cy', p.cy).attr('r', p.rad)
+        .style('fill', tierColor(r.tier)).style('fill-opacity', 0.5)
+        .style('stroke', tierColor(r.tier)).attr('stroke-width', 1.5);
+    });
+    closed.forEach((r) => {
+      const isTarget = r === target;
+      const p = { r: r, cx: xs(r.d), cy: ys(r.s), rad: isTarget ? 7 : 6 };
+      pts.push(p);
+      gm.append('path').attr('transform', 'translate(' + p.cx + ',' + p.cy + ')')
+        .attr('d', d3.symbol(d3.symbolDiamond, isTarget ? 110 : 70)())
+        .style('fill', isTarget ? 'var(--color-fg)' : 'var(--color-panel)')
+        .style('stroke', isTarget ? 'var(--color-panel)' : 'var(--cds-chart-muted)')
+        .attr('stroke-width', isTarget ? 2 : 1.5);
+    });
+
+    const placed = [[ml + 4, ys(target.s) - 6 - fs, ml + 4 + refW, ys(target.s) - 2]];
+    const gl = svg.append('g');
+    pts.filter((p) => p.r.label).sort((a, b) => b.r.s - a.r.s).forEach((p) => {
+      const t = gl.append('text').attr('class', 'lx-lbl').text(p.r.label);
+      const w = t.node().getComputedTextLength();
+      const gap = 4;
+      const cands = [
+        { x: p.cx + p.rad + gap, y: p.cy + fs / 3, a: 'start' },
+        { x: p.cx - p.rad - gap, y: p.cy + fs / 3, a: 'end' },
+        { x: p.cx, y: p.cy - p.rad - gap - 1, a: 'middle' },
+        { x: p.cx, y: p.cy + p.rad + gap + fs - 2, a: 'middle' }
+      ];
+      const boxOf = (c) => {
+        const bx = c.a === 'start' ? c.x : c.a === 'end' ? c.x - w : c.x - w / 2;
+        return [bx - 1, c.y - fs + 1, bx + w + 1, c.y + 3];
+      };
+      const fits = (b) => b[0] >= ml && b[2] <= W - mr && b[1] >= mt - 6 && b[3] <= H - mb
+        && !placed.some((q) => overlaps(q, b)) && !pts.some((o) => o !== p && hitsCircle(b, o));
+      const c = cands.find((cand) => fits(boxOf(cand)));
+      if (!c) { t.remove(); return; }
+      t.attr('x', c.x).attr('y', c.y).attr('text-anchor', c.a);
+      placed.push(boxOf(c));
+    });
+
+    const hl = svg.append('circle').style('fill', 'none').style('stroke', 'var(--color-fg)')
+      .attr('stroke-width', 1.5).style('pointer-events', 'none').style('display', 'none');
+    const show = (p) => {
+      hl.attr('cx', p.cx).attr('cy', p.cy).attr('r', p.rad + 4).style('display', null);
+      const o = boxOffset(pastBox);
+      tipShow(modelTip(p.r), o[0] + p.cx, o[1] + p.cy);
+    };
+    const hide = () => { hl.style('display', 'none'); tipHide(); };
+    const del = d3.Delaunay.from(pts, (p) => p.cx, (p) => p.cy);
+    svg.append('rect').attr('x', ml).attr('y', mt).attr('width', W - ml - mr).attr('height', H - mt - mb)
+      .style('fill', 'transparent')
+      .on('pointermove', (e) => {
+        const m = d3.pointer(e);
+        const p = pts[del.find(m[0], m[1])];
+        if (p && Math.hypot(m[0] - p.cx, m[1] - p.cy) <= Math.max(16, p.rad + 8)) show(p); else hide();
+      })
+      .on('pointerleave', hide);
+    const gf = svg.append('g');
+    pts.slice().sort((a, b) => a.r.d - b.r.d).forEach((p) => {
+      gf.append('circle').attr('cx', p.cx).attr('cy', p.cy).attr('r', Math.max(p.rad, 10))
+        .style('fill', 'transparent').style('pointer-events', 'none')
+        .attr('tabindex', 0).attr('role', 'img').attr('aria-label', p.r.model + ' ' + p.r.s + '点')
+        .on('focus', () => show(p)).on('blur', hide);
+    });
+  }
+
+  function drawFuture(forecast, frontier, target, asOf, yDom) {
+    const W = Math.max(280, futureBox.clientWidth);
+    const H = 420;
+    const lastF = frontier[frontier.length - 1];
+    const maxD = d3.max([lastF.d, d3.max(forecast, (r) => r.late)]);
+    const x0 = d3.utcMonth.floor(asOf);
+    const x1 = d3.utcMonth.offset(d3.utcMonth.ceil(maxD), 1);
+    const svg = frame(futureBox, W, H, '各マシン区分のモデルが' + target.model + 'の水準に並ぶ時期の予想。同じ値は下の表にあります。');
+    const yTicks = d3.range(yDom[0], yDom[1] + 1, 10);
+    const ml = Math.ceil(d3.max(yTicks, (t) => measure(svg, String(t), 'lx-tick'))) + 12;
+    const mr = 16, mt = 30, mb = 30;
+    const fs = fontPx(svg);
+    const ys = d3.scaleLinear(yDom, [H - mb, mt]);
+    const xs = d3.scaleUtc([x0, x1], [ml, W - mr]);
+    axes(svg, ys, yTicks, ml, mr, mt, mb, W, H);
+
+    const halfYear = xs(d3.utcMonth.offset(x0, 6)) - xs(x0);
+    d3.utcMonth.range(x0, d3.utcMonth.offset(x1, 1))
+      .filter((d) => (halfYear < 70 ? d.getUTCMonth() === 0 : d.getUTCMonth() % 6 === 0))
+      .forEach((d) => {
+        svg.append('text').attr('class', 'lx-tick').attr('x', xs(d)).attr('y', H - mb + 18).attr('text-anchor', 'middle')
+          .text(d.getUTCMonth() === 0 ? d.getUTCFullYear() + '年1月' : (d.getUTCMonth() + 1) + '月');
+      });
+
+    const clipId = 'lx-clip-future';
+    svg.append('clipPath').attr('id', clipId).append('rect')
+      .attr('x', ml).attr('y', mt).attr('width', W - ml - mr).attr('height', H - mt - mb);
+    const area = d3.area().x((d) => xs(d.d)).y0((d) => ys(d.low)).y1((d) => ys(d.high));
+    const band = svg.append('path').attr('d', area(frontier)).attr('clip-path', 'url(#' + clipId + ')')
+      .style('fill', 'var(--cds-chart-muted)').style('opacity', 0.2);
+
+    const nx = xs(asOf);
+    svg.append('line').attr('x1', nx).attr('x2', nx).attr('y1', mt).attr('y2', H - mb)
+      .style('stroke', 'var(--cds-chart-axis)').attr('stroke-width', 1);
+    svg.append('text').attr('class', 'lx-lbl lx-lbl-muted').attr('x', nx + 4).attr('y', mt + fs)
+      .text((asOf.getUTCMonth() + 1) + '月' + asOf.getUTCDate() + '日時点');
+
+    refLine(svg, ys, target.s, ml, mr, W);
+
+    const bl = svg.append('text').attr('class', 'lx-lbl lx-lbl-muted').text('最前線の伸び（予想の幅）');
+    const blW = bl.node().getComputedTextLength();
+    const endX = xs(lastF.d);
+    if (endX + 6 + blW <= W - mr) bl.attr('x', endX + 6).attr('y', ys((lastF.low + lastF.high) / 2) + fs / 3);
+    else bl.attr('x', endX).attr('y', ys(lastF.high) - 6).attr('text-anchor', 'end');
+
+    const hide = () => { svg.selectAll('.lx-hl').style('display', 'none'); tipHide(); };
+    band.on('pointermove', (e) => {
+      const m = d3.pointer(e);
+      const o = boxOffset(futureBox);
+      tipShow(frontierTip(frontier), o[0] + m[0], o[1] + m[1]);
+    }).on('pointerleave', tipHide);
+
+    const gt = svg.append('g');
+    forecast.forEach((r) => {
+      const c = tierColor(r.tier);
+      const yT = ys(r.target);
+      const g = gt.append('g').attr('tabindex', 0).attr('role', 'img')
+        .attr('aria-label', r.tier_label + '：' + r.reach_label + '（' + r.range_label + '）');
+      g.append('line').attr('x1', nx).attr('y1', ys(r.start)).attr('x2', xs(r.mid)).attr('y2', yT)
+        .style('stroke', c).attr('stroke-width', 2).attr('stroke-dasharray', '6 4');
+      g.append('rect').attr('x', xs(r.early)).attr('y', yT - 4).attr('width', Math.max(4, xs(r.late) - xs(r.early))).attr('height', 8).attr('rx', 4)
+        .style('fill', c).style('opacity', 0.45);
+      g.append('circle').attr('cx', nx).attr('cy', ys(r.start)).attr('r', 4)
+        .style('fill', c).style('stroke', 'var(--color-panel)').attr('stroke-width', 2);
+      g.append('circle').attr('cx', xs(r.mid)).attr('cy', yT).attr('r', 5)
+        .style('fill', c).style('stroke', 'var(--color-panel)').attr('stroke-width', 2);
+      g.append('circle').attr('class', 'lx-hl').attr('cx', xs(r.mid)).attr('cy', yT).attr('r', 9)
+        .style('fill', 'none').style('stroke', 'var(--color-fg)').attr('stroke-width', 1.5)
+        .style('pointer-events', 'none').style('display', 'none');
+      g.append('line').attr('x1', nx).attr('y1', ys(r.start)).attr('x2', xs(r.mid)).attr('y2', yT)
+        .style('stroke', 'transparent').attr('stroke-width', 14);
+      g.append('rect').attr('x', xs(r.early) - 8).attr('y', yT - 12).attr('width', Math.max(4, xs(r.late) - xs(r.early)) + 16).attr('height', 24)
+        .style('fill', 'transparent');
+      const show = () => {
+        svg.selectAll('.lx-hl').style('display', 'none');
+        g.select('.lx-hl').style('display', null);
+        const o = boxOffset(futureBox);
+        tipShow(tierTip(r), o[0] + xs(r.mid), o[1] + yT);
+      };
+      g.on('pointerenter', show).on('pointerleave', hide).on('focus', show).on('blur', hide);
+    });
+
+    const gl = svg.append('g');
+    const lanes = [];
+    forecast.slice().sort((a, b) => a.mid - b.mid).forEach((r) => {
+      const t = gl.append('text').attr('class', 'lx-lbl').attr('text-anchor', 'middle').text(r.range_label);
+      const w = t.node().getComputedTextLength();
+      let cx = (xs(r.early) + xs(r.late)) / 2;
+      cx = Math.min(W - mr - w / 2, Math.max(ml + w / 2, cx));
+      let lane = 0;
+      while (lanes[lane] != null && lanes[lane] > cx - w / 2 - 8) lane++;
+      lanes[lane] = cx + w / 2;
+      t.attr('x', cx).attr('y', ys(r.target) - 10 - lane * (fs + 4));
+    });
+  }
+
+  function chartState(status) {
+    tipHide();
+    [pastBox, futureBox].forEach((b) => {
+      b.textContent = '';
+      b.classList.toggle('dash-skeleton', status === 'loading');
+      if (status !== 'loading') el(b, 'div', 'lx-fail', '読み込めませんでした');
+    });
+  }
+
+  dash.onData(() => {
+    const M = dash.data('models');
+    const F = dash.data('forecast');
+    const R = dash.data('frontier');
+    fillMarks('models', M);
+    fillMarks('forecast', F);
+    if (M.status === 'ok') {
+      fillTable(root.querySelector('#lx-tbl-models'), M.data.slice().sort((a, b) =>
+        d3.ascending(a.released, b.released) || d3.ascending(a.model, b.model)), null);
+    }
+    if (F.status === 'ok') fillTable(root.querySelector('#lx-tbl-forecast'), F.data, 'tier');
+
+    const notOk = [M, F, R].find((d) => d.status !== 'ok');
+    if (notOk) { legend.textContent = ''; chartState(notOk.status); return; }
+
+    const models = M.data.map((r) => Object.assign({}, r, {
+      d: parseDay(r.released), s: Number(r.score), p: Number(r.params_b), open: r.kind === 'オープン'
+    }));
+    const forecast = F.data.map((r) => Object.assign({}, r, {
+      start: Number(r.start_score), target: Number(r.target_score),
+      early: parseDay(r.reach_early), mid: parseDay(r.reach_mid), late: parseDay(r.reach_late)
+    }));
+    const frontier = R.data.map((r) => Object.assign({}, r, { d: parseDay(r.date), low: Number(r.low), high: Number(r.high) }));
+    if (!models.length || !forecast.length || frontier.length < 2) { chartState('error'); return; }
+
+    const asOf = parseDay(forecast[0].as_of);
+    const target = models.filter((r) => !r.open).reduce((a, b) => (b.s > a.s ? b : a));
+    const lo = Math.floor((Math.min(d3.min(models, (r) => r.s), d3.min(forecast, (r) => r.start)) - 2) / 10) * 10;
+    const hi = Math.ceil((Math.max(d3.max(frontier, (r) => r.high), d3.max(models, (r) => r.s)) + 2) / 5) * 5;
+
+    [pastBox, futureBox].forEach((b) => b.classList.remove('dash-skeleton'));
+    tipHide();
+    drawLegend(models, forecast, target);
+    drawPast(models, target, asOf, [lo, hi]);
+    drawFuture(forecast, frontier, target, asOf, [lo, hi]);
+  });
+})();
+</script>
+
+<script>
+(function () {
+  const list = document.getElementById('lx-sources');
+  const fixed = [
+    ['Artificial Analysis：総合指数の評価方法', 'https://artificialanalysis.ai/methodology/intelligence-benchmarking'],
+    ['Epoch AI：オープンモデルは最前線に約4か月遅れる', 'https://epoch.ai/data-insights/open-closed-eci-gap'],
+    ['Unsloth：GLM-5.3をローカルで動かすためのメモリ要件', 'https://unsloth.ai/docs/models/glm-5.3']
+  ];
+  dash.onData(() => {
+    const M = dash.data('models');
+    list.textContent = '';
+    const byUrl = new Map();
+    if (M.status === 'ok') {
+      M.data.forEach((r) => {
+        if (!r.source) return;
+        if (!byUrl.has(r.source)) byUrl.set(r.source, []);
+        byUrl.get(r.source).push(r.model);
+      });
+    }
+    const items = Array.from(byUrl.entries()).map(([url, names]) => [names.join('、') + 'のスコア', url]).concat(fixed);
+    items.forEach(([label, url]) => {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.textContent = label;
+      li.appendChild(a);
+      const host = document.createElement('span');
+      host.className = 'lx-src-host';
+      host.textContent = '（' + new URL(url).hostname + '）';
+      li.appendChild(host);
+      list.appendChild(li);
+    });
+  });
+})();
+</script>
+</main>
+</body>
+</html>
