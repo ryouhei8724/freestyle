@@ -1,0 +1,12 @@
+<section class="chapter" id="ch8" data-no="08" data-toc="これから">
+<div class="chapter-title"><span class="no">08</span><h2>これから</h2></div>
+
+<ul>
+<li><strong>Iceberg v3 の普及と v4 の策定</strong>。v3 は Iceberg 1.10.0（2025年9月）で一般提供になり、エンジン側の対応も広がっている。v4 では、パスの相対化や、列指向にした統計（Content Stats）の採用が決まったと報じられている。小さなコミットを1ファイルで済ませる single-file commit や、適応的なメタデータツリーは、2026年夏の時点でまだ設計中とされる</li>
+<li><strong>カタログの標準化</strong>。Iceberg REST Catalog API が共通語になりつつあり、Unity Catalog、Apache Polaris（2026年2月に TLP）、AWS Glue、S3 Tables などが対応している</li>
+<li><strong>Delta と Iceberg の収束</strong>。Deletion Vector、Variant 型（Parquet 側で共通の仕様に）、行リネージ（Delta の row tracking）など、概念の共通化が進んでいる。Delta Lake 4.0 のカタログ管理テーブルも、コミットの調停をカタログに寄せる点で Iceberg と同じ方向を向いている</li>
+<li><strong>「メタデータもファイルに置く」原則の見直し</strong>。DuckLake は、メタデータを SQL データベースに置いたほうが単純で速いと主張し、2026年4月に 1.0 に達した。小さな書き込みをメタデータ側に取り込む「データインライン化」なども備える。一周回って「データベースに戻る」動きとして興味深い</li>
+<li><strong>ファイル層の新顔</strong>。AI 用途のランダムアクセスや超ワイドテーブル向けに、Lance、Vortex、Nimble などが登場している。OTF はファイル形式を差し替えられる設計なので、将来は Parquet 以外も載り得る</li>
+<li><strong>OLTP との接続</strong>。Databricks（Neon）や Snowflake（Crunchy Data）の Postgres 系の取り組みのように、OLTP DB と Lakehouse をシームレスにつなぐ方向。OTF が苦手な領域を、隣の層で補う構図になっている</li>
+</ul>
+</section>

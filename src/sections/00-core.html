@@ -1,0 +1,34 @@
+<section class="chapter" id="ch0" data-no="00" data-toc="一言でいうと">
+<div class="chapter-title"><span class="no">00</span><h2>一言でいうと</h2></div>
+
+<p class="lead">オープンテーブルフォーマット（以下 OTF）は、S3 などのオブジェクトストレージ上にある Parquet の「ただのファイル群」に、<strong>メタデータ層（トランザクションログ）</strong>を重ねる仕様です。このメタデータには「どのファイルの集合が、どのバージョンのテーブルなのか」が書かれています。これによって、ACID、スキーマ管理、タイムトラベル、行単位の更新といったデータベース並みの機能が、特定のエンジンやベンダーに縛られずに使えるようになります。</p>
+
+<p>本質的な発想の転換は一つだけです。</p>
+
+<div class="tbl">
+<table>
+<thead><tr><th></th><th>「テーブルとは何か」の定義</th></tr></thead>
+<tbody>
+<tr><th>従来（Hive）</th><td><strong>ディレクトリにいま置かれているファイル全部</strong>。状態は暗黙的で、<code>ls</code>（LIST）の結果が真実</td></tr>
+<tr><th>OTF</th><td><strong>スナップショット N に明示的に列挙されたファイル</strong>。状態は明示的でバージョン付き。メタデータが真実</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- figure:core -->
+
+<div class="callout">
+<span class="label">KEY IDEA</span>
+<p>OTF の利点は、ほぼすべてこの一点から導かれます。</p>
+<ul>
+<li><strong>原子性</strong>：新しいファイルは、メタデータから参照されるまで存在しないのと同じ。途中で失敗しても読み手には影響しない</li>
+<li><strong>分離性</strong>：読み手はあるスナップショットを固定して読むので、書き込み中の途中状態を見ない</li>
+<li><strong>タイムトラベル</strong>：古いスナップショットのメタデータが残っていれば、その時点のテーブルを読める</li>
+<li><strong>listing 不要</strong>：ファイルのパスはメタデータに書いてある</li>
+<li><strong>データスキップ</strong>：ファイルごとの統計（min/max）もメタデータにあり、ファイルを開かずに読む対象を絞れる</li>
+<li><strong>安全なスキーマ進化</strong>：スキーマもメタデータで版管理され、列を ID で識別できる</li>
+</ul>
+</div>
+
+<p class="note">2026年10月14日に、2025年以降の動向（Iceberg v3・v4、Delta Lake 4.0、Apache Polaris、DuckLake など）を一次情報と業界の公開情報で確認しています。各プロジェクトの最新のバージョンや機能の対応状況は、リリースノートで確認してください。</p>
+</section>

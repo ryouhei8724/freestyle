@@ -1,0 +1,27 @@
+<section class="chapter" id="ch6" data-no="06" data-toc="弱点と運用の落とし穴">
+<div class="chapter-title"><span class="no">06</span><h2>弱点と運用上の落とし穴</h2></div>
+
+<!-- figure:maintenance -->
+
+<ol>
+<li><strong>メンテナンスが必須</strong>（「DBA の仕事が自分に戻ってくる」）。小さなファイルをまとめ、古いスナップショットを失効させ、参照されなくなったファイルを消す作業を、誰かが定期的に回す必要がある
+<span class="code-label">代表的なメンテナンス操作</span>
+<pre><code><span class="c">-- Delta Lake</span>
+OPTIMIZE orders;                       <span class="c">-- 小さなファイルをまとめる</span>
+VACUUM orders RETAIN 168 HOURS;        <span class="c">-- 参照されなくなったファイルを物理削除</span>
+
+<span class="c">-- Apache Iceberg（Spark のプロシージャ）</span>
+CALL cat.system.rewrite_data_files(table =&gt; 'db.orders');
+CALL cat.system.rewrite_manifests('db.orders');
+CALL cat.system.expire_snapshots(table =&gt; 'db.orders', older_than =&gt; TIMESTAMP '2024-06-01 00:00:00');
+CALL cat.system.remove_orphan_files(table =&gt; 'db.orders');</code></pre>
+これを自動化するマネージドな選択肢も増えています（Databricks の Predictive Optimization、S3 Tables の自動コンパクションなど）。</li>
+<li><strong>小さなファイルとメタデータの肥大化</strong>。数秒ごとにストリーミングでコミットすると、スナップショット、manifest、小さなファイルが爆発的に増える</li>
+<li><strong>書き込みの競合</strong>。OCC なので、同じパーティションに多数の writer が書くとリトライが続発する。writer を分割するなど、設計での回避が必要</li>
+<li><strong>エンジン間の機能差</strong>。「Iceberg 対応」と書かれていても、v3 の Deletion Vector、equality delete、ブランチ、ビューへの対応はエンジンによってまちまち。「読めるが書けない」こともある</li>
+<li><strong>カタログが新たなロックインの源泉になる</strong>。フォーマットはオープンでも、アクセス制御やコミットの調停はカタログに依存する</li>
+<li><strong>削除がすぐには物理化されない</strong>。タイムトラベルのために古いファイルが残るので、GDPR 対応には expire や VACUUM まで運用に含める必要がある</li>
+<li><strong>OLTP やサブ秒の鮮度には向かない</strong>。その用途は Postgres などの OLTP DB や KV ストアに任せ、CDC で OTF へ流すのが定石</li>
+<li><strong>「オープン」の度合いは一様ではない</strong>。Delta Lake は Linux Foundation の配下だが開発の中心は Databricks で、Iceberg は Apple、Netflix、AWS、Snowflake、Databricks などのコミッターが参加する ASF のプロジェクト。どちらを選ぶかは、ガバナンスの観点でも判断材料になる</li>
+</ol>
+</section>

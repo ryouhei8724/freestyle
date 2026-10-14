@@ -1,0 +1,189 @@
+<section class="chapter" id="ch3" data-no="03" data-toc="仕組み">
+<div class="chapter-title"><span class="no">03</span><h2>仕組み：OTF は何をしているのか</h2></div>
+
+<h3 id="principles"><span class="sec">3.1</span>共通の原理</h3>
+
+<p>三大 OTF は細部こそ違いますが、土台にある原理は共通です。</p>
+<ol class="steps">
+<li>データファイルは<strong>イミュータブル</strong>（一度書いたら変更しない）</li>
+<li>テーブルの状態（有効なファイル集合、スキーマ、パーティション定義、統計）を<strong>メタデータに明示的に記録する</strong></li>
+<li>変更は「新しいファイルを書く → 新しいメタデータ（スナップショット）を作る → <strong>現在版をアトミックに切り替える</strong>」という手順で行う</li>
+<li>切り替えは<strong>楽観的同時実行制御（OCC）</strong>。競合したら確認してリトライする</li>
+<li>読み手はある時点のスナップショットを固定して読む。つまり <strong>MVCC とスナップショット分離</strong></li>
+</ol>
+
+<!-- figure:occ -->
+
+<p>この仕組みから、次の性質がそのまま得られます。</p>
+<ul>
+<li><strong>原子性</strong>：途中で落ちても、どこからも参照されないファイルが残るだけ。後で orphan file として掃除する</li>
+<li><strong>分離性</strong>：読み手は v41 を最後まで一貫して読める</li>
+<li><strong>タイムトラベル</strong>：v30 のメタデータが残っていれば v30 を読める</li>
+<li><strong>listing 不要</strong>：ファイルのパスはメタデータに書かれている</li>
+<li><strong>データスキップ</strong>：ファイルごとの min/max がメタデータにあるので、<strong>ファイルを開かずに</strong>読む対象を絞り込める</li>
+</ul>
+
+<div class="callout">
+<span class="label">POINT</span>
+<p><strong>ストレージに求めるアトミック操作は1つだけ</strong>です。Delta Lake ならログファイルの「put-if-absent」、Iceberg ならカタログ上の「ポインタの compare-and-swap（CAS）」です。それ以外は、普通の PUT と GET で済みます。</p>
+</div>
+
+<h3 id="delta"><span class="sec">3.2</span>Delta Lake の内部</h3>
+
+<span class="code-label">Delta テーブルのディレクトリ構成</span>
+<pre><code>orders/
+├── _delta_log/
+│   ├── 00000000000000000000.json
+│   ├── ...
+│   ├── 00000000000000000040.checkpoint.parquet   <span class="c">← 既定では10コミットごと</span>
+│   ├── 00000000000000000041.json
+│   ├── 00000000000000000042.json
+│   └── _last_checkpoint
+├── part-00007-a1b2.snappy.parquet
+└── part-00012-c3d4.snappy.parquet</code></pre>
+
+<p>コミットファイルは「アクション」を1行1件で並べた NDJSON です（下の例は見やすさのため改行しています）。</p>
+
+<span class="code-label">_delta_log/00000000000000000042.json</span>
+<pre><code>{"commitInfo":{"operation":"MERGE","readVersion":41,"isolationLevel":"WriteSerializable", ...}}
+{"remove":{"path":"part-00007-a1b2.snappy.parquet","deletionTimestamp":1717200000000,"dataChange":true}}
+{"add":{"path":"part-00012-c3d4.snappy.parquet","size":104857600,"partitionValues":{},"dataChange":true,
+        "stats":"{\"numRecords\":812345,\"minValues\":{\"order_id\":1000},\"maxValues\":{\"order_id\":9999},\"nullCount\":{\"order_id\":0}}"}}</code></pre>
+
+<!-- figure:delta-log -->
+
+<ul>
+<li><strong>スナップショットの再構成</strong>：最新のチェックポイント（v40）に 41.json、42.json を順に適用する。その結果「add されていて、remove されていないファイル集合」が v42 のテーブルになる</li>
+<li><strong>排他制御</strong>：<code>N+1.json</code> を put-if-absent で作れた writer が勝つ。HDFS、ADLS、GCS はこれをネイティブにできるが、S3 は長らくできなかったため、DynamoDB を使う LogStore などで補っていた。2024年の S3 条件付き書き込みで、この制約は解消に向かっている</li>
+<li><strong>カタログ管理テーブル</strong>：Delta Lake 4.0（2025年9月）では、コミットの調停をファイルシステムではなくカタログに任せる「カタログ管理テーブル」（table feature 名は catalogManaged）がプレビューとして入った。複数クラウド・複数エンジンからの書き込みを想定している</li>
+<li>その他の主な機能
+  <ul>
+  <li><strong>プロトコルバージョンと table features</strong>：リーダー／ライターが対応すべき機能を、テーブル側で宣言する</li>
+  <li><strong>Deletion Vector</strong>：削除した行を RoaringBitmap で記録し、ファイルの書き直しを避ける</li>
+  <li><strong>Column Mapping</strong>：物理列名と論理列名を分離し、rename／drop を安全にする</li>
+  <li><strong>Change Data Feed</strong>：行レベルの変更履歴を出力する</li>
+  <li><strong>Liquid Clustering</strong>：固定のパーティションと Z-order に代わる、後から変更できるクラスタリング</li>
+  <li><strong>txn アクション</strong>：ストリーミング書き込みを冪等にし、exactly-once を実現する</li>
+  </ul>
+</li>
+</ul>
+
+<h3 id="iceberg"><span class="sec">3.3</span>Apache Iceberg の内部</h3>
+
+<!-- figure:iceberg-tree -->
+
+<p><strong>コミット</strong>は、新しい <code>metadata.json</code> を書いてから、カタログで「旧パス → 新パス」を CAS で切り替える操作です。具体的な実装はカタログごとに違います。</p>
+<ul>
+<li>Hive Metastore：ロックを取って ALTER TABLE</li>
+<li>JDBC カタログ：<code>UPDATE … WHERE metadata_location = 旧パス</code></li>
+<li>REST カタログ：サーバ側が要件（requirements）を検証して適用する</li>
+</ul>
+
+<p><strong>クエリ計画は多段のプルーニング</strong>になっています。</p>
+<ol>
+<li>manifest list のパーティション範囲を見て、<strong>manifest ごと</strong>スキップする</li>
+<li>manifest の列統計を見て、<strong>データファイル単位</strong>でスキップする</li>
+<li>Parquet の footer とページインデックスを見て、<strong>Row Group やページの単位</strong>でスキップする</li>
+</ol>
+<p>これで、数百万ファイルあるテーブルでも、listing なしで数秒以内に計画を立てられます。</p>
+
+<p>Iceberg の設計上の特徴は、次の3点です。</p>
+
+<h4>① 列を ID で識別する（安全なスキーマ進化）</h4>
+<p>各列に一意の field ID を振り、Parquet ファイル側にも ID を埋め込みます。rename はメタデータ上の名前を変えるだけで済みます。drop した列と同名の列を新しく add しても別の ID になるので、古いデータが復活しません。第2章で挙げた事故は、構造的に起きなくなります。</p>
+
+<!-- figure:schema-evolution -->
+
+<h4>② Hidden Partitioning と Partition Evolution</h4>
+
+<span class="code-label">Hive 流と Iceberg の比較（Spark SQL）</span>
+<pre><code><span class="c">-- Hive 流：パーティション用の列を自分で持ち、クエリでも明示が必要</span>
+CREATE TABLE orders (order_id BIGINT, ts TIMESTAMP, amount DECIMAL(10,2))
+PARTITIONED BY (dt STRING);
+SELECT sum(amount) FROM orders
+WHERE ts &gt;= '2024-06-01' AND ts &lt; '2024-06-02'
+  AND dt = '2024-06-01';               <span class="c">-- 書き忘れるとフルスキャン</span>
+
+<span class="c">-- Iceberg：変換関数でパーティションを定義する。ユーザーは ts で絞るだけでよい</span>
+CREATE TABLE orders (order_id BIGINT, ts TIMESTAMP, amount DECIMAL(10,2))
+USING iceberg
+PARTITIONED BY (days(ts), bucket(16, order_id));
+SELECT sum(amount) FROM orders
+WHERE ts &gt;= '2024-06-01' AND ts &lt; '2024-06-02';   <span class="c">-- 自動でプルーニングされる</span>
+
+<span class="c">-- 後から粒度を変える。既存データの書き直しは不要で、古いファイルは古い仕様のまま共存する</span>
+ALTER TABLE orders DROP PARTITION FIELD days(ts);
+ALTER TABLE orders ADD  PARTITION FIELD hours(ts);</code></pre>
+
+<!-- figure:hidden-partition -->
+
+<p>変換関数には identity、bucket[N]、truncate[W]、year、month、day、hour などがあります。パーティションは「データの物理配置の最適化」であって、利用者が意識する論理的な列ではない、というのが Iceberg の考え方です。</p>
+
+<h4>③ ブランチとタグ</h4>
+<p>スナップショットに名前を付けて分岐できます。「ブランチに書く → 品質を検査する → main に反映する」という <strong>Write-Audit-Publish（WAP）</strong>パターンが組めます。Project Nessie を使えば、Git のように複数のテーブルをまとめてブランチ管理することもできます。</p>
+
+<p>このほか、行レベル削除は format v2 の delete file（位置指定の position delete と、値指定の equality delete）で導入され、v3 では Delta と同じ発想の <strong>Deletion Vector</strong>（Puffin ファイルに格納するビットマップ）に置き換わりました。v3 は行ごとの ID と最終更新のシーケンス番号を追跡する<strong>行リネージ</strong>も導入し、増分処理や CDC に使えるようになっています。</p>
+
+<h3 id="hudi"><span class="sec">3.4</span>Apache Hudi の内部</h3>
+
+<!-- figure:hudi -->
+
+<ul>
+<li><code>.hoodie/</code> に<strong>タイムライン</strong>を持つ。commit、deltacommit、compaction、clean、rollback などの instant が、requested → inflight → completed と遷移する</li>
+<li><strong>レコードキーとインデックス</strong>（bloom、bucket、メタデータテーブル内の record-level index など）で「この key はどのファイルにあるか」を引けるため、<strong>upsert が効率的</strong>。ここが他の OTF との大きな違い</li>
+<li>2種類のテーブル型
+  <ul>
+  <li><strong>Copy-on-Write</strong>：更新時にファイルを書き直す。読みは速い</li>
+  <li><strong>Merge-on-Read</strong>：base の Parquet に、更新を log ファイル（Avro）として追記し、読むときにマージする。書きが速い。後でコンパクションする（Kudu の base ＋ delta とよく似た構造）</li>
+  </ul>
+</li>
+<li><strong>増分クエリ</strong>：「コミット X 以降に変わったレコードだけ」を読める</li>
+<li><strong>メタデータテーブル</strong>（内部的な MoR テーブル）にファイル一覧や統計、索引を持ち、listing を避ける</li>
+<li>コンパクション、クラスタリング、クリーニングといったテーブルサービスを、書き込みと同時（inline）にも非同期にも動かせる</li>
+<li>Hudi 1.0（2024年12月）では、LSM 構造のタイムライン、セカンダリインデックス、ロックを取らずに並行書き込みできる制御（NBCC）などが入った</li>
+</ul>
+
+<h3 id="paimon"><span class="sec">3.5</span>Apache Paimon（補足）</h3>
+<p>Paimon は、バケットごとに <strong>LSM ツリー</strong>を持つ、ストリーミングファーストのテーブルフォーマットです。Flink からの高頻度な upsert に強く、changelog（変更ストリーム）を生成したり、partial-update や集約といったマージエンジンを選べたりします。データベースの LSM ストレージエンジン（RocksDB など）の考え方を、オブジェクトストレージ上のテーブルに持ち込んだもの、と捉えると理解しやすいです。</p>
+
+<h3 id="cow-mor"><span class="sec">3.6</span>行レベル更新の2方式：CoW と MoR</h3>
+
+<!-- figure:cow-mor -->
+
+<div class="tbl xwide">
+<table>
+<thead><tr><th></th><th>Copy-on-Write（CoW）</th><th>Merge-on-Read（MoR）</th></tr></thead>
+<tbody>
+<tr><th>更新・削除の方法</th><td>該当行を含むファイルを丸ごと書き直す</td><td>削除マーカーや差分を別に書く</td></tr>
+<tr><th>書き込みコスト</th><td>大（書き込み増幅）</td><td>小</td></tr>
+<tr><th>読み取りコスト</th><td>小</td><td>大（マージが必要）</td></tr>
+<tr><th>必要なメンテナンス</th><td>少ない</td><td>コンパクションが必須</td></tr>
+<tr><th>実装例</th><td>Delta（既定）、Iceberg、Hudi CoW</td><td>Iceberg v2 の position／equality delete、<strong>v3 と Delta の Deletion Vector</strong>、Hudi MoR、Paimon</td></tr>
+</tbody>
+</table>
+</div>
+
+<span class="code-label">CDC を MERGE で反映する例（Delta ／ Iceberg 共通の Spark SQL）</span>
+<pre><code>MERGE INTO orders t
+USING orders_cdc s ON t.order_id = s.order_id
+WHEN MATCHED AND s.op = 'D' THEN DELETE
+WHEN MATCHED THEN UPDATE SET *
+WHEN NOT MATCHED THEN INSERT *;</code></pre>
+
+<h3 id="format-compare"><span class="sec">3.7</span>4つのフォーマットの比較</h3>
+
+<div class="tbl xwide">
+<table>
+<thead><tr><th></th><th>Delta Lake</th><th>Apache Iceberg</th><th>Apache Hudi</th><th>Apache Paimon</th></tr></thead>
+<tbody>
+<tr><th>発祥</th><td>Databricks（2017年、2019年 OSS）</td><td>Netflix（2017年）</td><td>Uber（2016年）</td><td>Alibaba・Flink コミュニティ（2022年）</td></tr>
+<tr><th>ガバナンス</th><td>Linux Foundation</td><td>Apache Software Foundation</td><td>Apache Software Foundation</td><td>Apache Software Foundation</td></tr>
+<tr><th>メタデータ構造</th><td><code>_delta_log</code> の JSON 連番 ＋ Parquet チェックポイント</td><td>metadata.json → manifest list → manifest（Avro）の木</td><td><code>.hoodie</code> タイムライン ＋ メタデータテーブル</td><td>スナップショット → manifest ＋ LSM</td></tr>
+<tr><th>コミットの要</th><td>ログファイルの put-if-absent（4.0 でカタログ管理も）</td><td>カタログでのポインタの CAS</td><td>タイムライン ＋ ロックプロバイダ</td><td>スナップショットファイル（＋カタログ）</td></tr>
+<tr><th>得意なこと</th><td>Spark・Databricks との統合、ストリーミング</td><td>マルチエンジンの相互運用、巨大テーブル、パーティション進化</td><td>upsert・CDC、インデックス、増分処理</td><td>Flink でのストリーミング upsert、低遅延</td></tr>
+<tr><th>行の更新</th><td>CoW ＋ Deletion Vector</td><td>CoW ／ MoR（v2 delete file、v3 Deletion Vector）</td><td>CoW ／ MoR（log ファイル）</td><td>LSM（MoR）</td></tr>
+<tr><th>パーティション</th><td>明示的なパーティション → Liquid Clustering</td><td>Hidden Partitioning ＋ 進化</td><td>明示的なパーティション</td><td>明示的なパーティション ＋ バケット</td></tr>
+</tbody>
+</table>
+</div>
+</section>

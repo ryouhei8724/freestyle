@@ -1,0 +1,19 @@
+{
+  "name": "open-table-format-guide",
+  "version": "1.0.0",
+  "private": true,
+  "description": "オープンテーブルフォーマット（Parquet・Kudu・Hive・Delta Lake・Iceberg・Hudi）を図解で読み解く技術解説サイト",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/build.mjs && node scripts/check.mjs",
+    "start": "wrangler dev --config wrangler.static.jsonc",
+    "deploy": "wrangler deploy --config wrangler.static.jsonc"
+  },
+  "devDependencies": {
+    "wrangler": "4.92.0"
+  }
+}

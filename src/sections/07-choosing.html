@@ -1,0 +1,26 @@
+<section class="chapter" id="ch7" data-no="07" data-toc="選び方">
+<div class="chapter-title"><span class="no">07</span><h2>選び方（2026年時点の実務感覚）</h2></div>
+
+<!-- figure:decision -->
+
+<div class="tbl wide">
+<table>
+<thead><tr><th>状況</th><th>第一候補</th></tr></thead>
+<tbody>
+<tr><td>複数のエンジンやクラウドで共有したい、ベンダー中立を重視する</td><th>Iceberg</th></tr>
+<tr><td>Databricks 中心、または Microsoft Fabric を使う</td><th>Delta Lake（外部には UniForm で Iceberg として公開できる）</th></tr>
+<tr><td>CDC や upsert が大量で、レコードインデックスが欲しい</td><th>Hudi</th></tr>
+<tr><td>Flink 中心のリアルタイム upsert</td><th>Paimon、または Iceberg ＋ Flink</th></tr>
+<tr><td>小〜中規模でシンプルにしたい、DuckDB 中心</td><th>DuckLake（2026年4月に 1.0。運用実績は要確認）</th></tr>
+<tr><td>ミリ秒単位の更新や点検索</td><th>OTF ではなく OLTP DB、KV、（既存資産なら）Kudu</th></tr>
+</tbody>
+</table>
+</div>
+
+<p>実際の選定では、この表に加えて、次の点も確認します。</p>
+<ul>
+<li>使う予定のエンジンが、そのフォーマットの<strong>どの機能まで読み書きできるか</strong>（例：Iceberg v3 の Deletion Vector、equality delete、ブランチ）</li>
+<li>どのカタログを使うか。アクセス制御、認証情報の払い出し、複数エンジンからのコミットを誰が調停するか</li>
+<li>メンテナンス（コンパクション、スナップショットの失効、孤立ファイルの削除）を誰が、どの仕組みで回すか</li>
+</ul>
+</section>

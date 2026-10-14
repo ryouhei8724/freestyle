@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>オープンテーブルフォーマットを読み解く｜Parquet・Kudu・Delta Lake・Iceberg・Hudi</title>
+<meta name="description" content="Parquet、Hive、Apache Kudu、Snowflake、Delta Lake、Apache Iceberg、Apache Hudi、Databricks を一本の歴史でつなぎ、オープンテーブルフォーマットの仕組みと、従来のDB・データレイクとの違いを{{FIGCOUNT}}点の図解で解説する技術者向けの長編ガイド。">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script>try{var t=localStorage.getItem('otf-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
+<style>
+{{CSS}}
+</style>
+</head>
+<body>
+<div class="progress" aria-hidden="true"><span id="progress-bar"></span></div>
+<header class="masthead">
+  <a class="brand" href="#top">OPEN TABLE FORMATS</a>
+  <span class="masthead-sub">データ基盤を、層と歴史で理解する</span>
+  <button class="theme-toggle" type="button" id="theme-toggle" aria-label="表示テーマを切り替える">
+    <span class="theme-label" id="theme-label">自動</span>
+  </button>
+</header>
+
+<main id="top">
+<section class="hero">
+  <p class="eyebrow">DATA PLATFORM / DEEP DIVE</p>
+  <h1>オープンテーブル<br class="br-narrow">フォーマットを<br>読み解く</h1>
+  <p class="subtitle">Parquet・Hive・Kudu から、<br class="br-narrow">Delta Lake・Iceberg・Hudi まで。</p>
+  <p class="intro">「テーブルとは、どのファイルの集合なのか」。この問いの答えを、ディレクトリの中身から、バージョン付きのメタデータへ移した。それがオープンテーブルフォーマットの本質です。Hadoop 以来の歴史、内部構造、データベースやデータレイクとの違い、弱点と選び方までを、{{CHAPTERCOUNT}}章と{{FIGCOUNT}}点の図でたどります。</p>
+  <div class="meta">
+    <span>全{{CHAPTERCOUNT}}章</span><span>図解{{FIGCOUNT}}点</span><span>技術者向け</span><time datetime="{{DATE}}">技術確認日 {{DATE_DOT}}</time>
+  </div>
+  <a class="start" href="#ch0">最初から読む <span aria-hidden="true">↓</span></a>
+</section>
+
+<div class="reading-layout">
+  <aside class="toc-aside">
+    <details class="toc" id="toc" open>
+      <summary>目次</summary>
+      <nav aria-label="目次">
+{{TOC}}
+      </nav>
+    </details>
+  </aside>
+  <article class="article">
+{{BODY}}
+  </article>
+</div>
+</main>
+
+<footer class="site-footer">
+  <span>OPEN TABLE FORMATS — オープンテーブルフォーマットを読み解く</span>
+  <a href="#top">先頭へ ↑</a>
+</footer>
+<script>
+{{JS}}
+</script>
+</body>
+</html>

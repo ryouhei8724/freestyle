@@ -1,0 +1,101 @@
+<section class="chapter" id="ch4" data-no="04" data-toc="何が違うのか">
+<div class="chapter-title"><span class="no">04</span><h2>何が違うのか</h2></div>
+
+<h3 id="vs-hive"><span class="sec">4.1</span>従来のデータレイク（Hive テーブル）との違い</h3>
+
+<div class="tbl xwide">
+<table>
+<thead><tr><th>観点</th><th>Hive テーブル</th><th>OTF</th></tr></thead>
+<tbody>
+<tr><th>テーブルの実体</th><td>ディレクトリ配下の全ファイル（暗黙）</td><td class="hl">スナップショットに列挙されたファイル（明示）</td></tr>
+<tr><th>ファイルの見つけ方</th><td>ディレクトリの listing</td><td class="hl">メタデータを読む</td></tr>
+<tr><th>原子性</th><td>なし（rename 頼み、S3 では破綻）</td><td class="hl">メタデータのアトミックな切り替え</td></tr>
+<tr><th>読み書きの同時実行</th><td>途中の状態が見える</td><td class="hl">スナップショット分離</td></tr>
+<tr><th>更新・削除</th><td>パーティションを上書き</td><td class="hl">MERGE／UPDATE／DELETE（CoW／MoR）</td></tr>
+<tr><th>スキーマ進化</th><td>名前・位置に依存していて危険</td><td class="hl">ID ベースで安全（Iceberg、Delta の Column Mapping）</td></tr>
+<tr><th>パーティション</th><td>ユーザーに露出し、変更できない</td><td class="hl">Hidden Partitioning、進化、Liquid Clustering</td></tr>
+<tr><th>統計</th><td>パーティション単位、しばしば古い</td><td class="hl">ファイル・列単位の統計をコミット時に必ず記録</td></tr>
+<tr><th>履歴</th><td>なし</td><td class="hl">タイムトラベル、ロールバック、監査</td></tr>
+<tr><th>メタデータのスケール</th><td>HMS（RDBMS）がボトルネック</td><td class="hl">メタデータ自体がオブジェクトストレージ上に分散</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 id="vs-rdbms"><span class="sec">4.2</span>RDBMS ／ DWH との違い：「分解されたデータベース」</h3>
+
+<!-- figure:unbundled -->
+
+<div class="tbl wide">
+<table>
+<thead><tr><th>RDBMS の構成要素</th><th>OTF での対応物</th></tr></thead>
+<tbody>
+<tr><th>データページ／ヒープ</th><td>Parquet ファイル（イミュータブル）</td></tr>
+<tr><th>WAL ／ redo log</th><td><code>_delta_log</code>、Iceberg のスナップショットとメタデータ、Hudi のタイムライン</td></tr>
+<tr><th>MVCC のバージョンチェーン</th><td>スナップショット（<strong>ファイル集合</strong>のバージョン）</td></tr>
+<tr><th>システムカタログ</th><td>カタログ（HMS／Glue／Unity／Polaris／REST）＋テーブルのメタデータ</td></tr>
+<tr><th>統計情報</th><td>ファイル単位の min/max・null 数、Puffin（NDV スケッチなど）</td></tr>
+<tr><th>インデックス</th><td>パーティション、クラスタリング（Z-order／Hilbert）、ブルームフィルタ。本格的なインデックスは Hudi 以外ほぼない</td></tr>
+<tr><th>ロックマネージャ</th><td>OCC ＋ ストレージやカタログのアトミック操作</td></tr>
+<tr><th>VACUUM ／ チェックポイント</th><td>コンパクション、expire snapshots、VACUUM</td></tr>
+<tr><th>オプティマイザ／エグゼキュータ</th><td><strong>外部</strong>（Spark／Trino／Flink／DuckDB…）。差し替えられる</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>決定的な違いは<strong>粒度とレイテンシ</strong>です。</p>
+
+<div class="tbl wide">
+<table>
+<thead><tr><th></th><th>RDBMS</th><th>OTF</th></tr></thead>
+<tbody>
+<tr><th>並行制御の単位</th><td>行・ページ</td><td><strong>ファイル（MB〜GB）</strong></td></tr>
+<tr><th>コミットのレイテンシ</th><td>ミリ秒</td><td>数百ミリ秒〜秒（オブジェクトストレージとの往復）</td></tr>
+<tr><th>実用的なコミット頻度</th><td>毎秒数千〜数万トランザクション</td><td>テーブルあたり秒〜分単位のマイクロバッチが現実的</td></tr>
+<tr><th>点検索</th><td>インデックスで高速</td><td>苦手</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>OTF が（基本的に）提供しないものもあります。</p>
+<ul>
+<li>OLTP 的な、高頻度で小さなトランザクション</li>
+<li>主キー、ユニーク、外部キーといった制約の強制（Delta の CHECK／NOT NULL のように、一部はある）</li>
+<li>汎用のセカンダリインデックス</li>
+<li>複数テーブルにまたがるトランザクション（Iceberg REST カタログのマルチテーブルコミット、Nessie、DuckLake などで、限定的には可能）</li>
+</ul>
+
+<p>逆に、RDBMS にはない OTF の強みは次のとおりです。</p>
+<ul>
+<li><strong>ストレージと計算が完全に分離</strong>している</li>
+<li><strong>同じデータを複数のエンジンで直接読める</strong>（データのコピーもエクスポートも不要）</li>
+<li>ペタバイト級のデータを S3 の単価で保持できる</li>
+<li>ベンダーが消えても、データはオープン仕様のファイルとして残る</li>
+</ul>
+
+<h3 id="vs-kudu"><span class="sec">4.3</span>Apache Kudu との違い</h3>
+
+<!-- figure:kudu-vs-otf -->
+
+<div class="tbl xwide">
+<table>
+<thead><tr><th></th><th>Kudu</th><th>OTF</th></tr></thead>
+<tbody>
+<tr><th>実体</th><td>常駐の分散サーバ（master ＋ tablet server、Raft）</td><td>ファイル＋メタデータ（＋カタログ）。<strong>サーバ不要</strong></td></tr>
+<tr><th>ストレージ</th><td>ローカルディスク（3重複製）</td><td>オブジェクトストレージ</td></tr>
+<tr><th>計算と保存</th><td>密結合</td><td>分離</td></tr>
+<tr><th>更新</th><td>主キーで行単位の upsert、ミリ秒</td><td>ファイル単位、コミットは秒〜分</td></tr>
+<tr><th>点検索</th><td>速い</td><td>苦手</td></tr>
+<tr><th>アクセス経路</th><td>Kudu API 経由（Impala／Spark のコネクタ）</td><td>どのエンジンもファイルを直接読める</td></tr>
+<tr><th>運用</th><td>クラスタの容量計画、リバランス、障害対応</td><td>テーブルのメンテナンス（コンパクションなど）</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout">
+<span class="label">SUMMARY</span>
+<p>まとめると、<strong>Kudu は「更新レイテンシ」を優先し、OTF は「オープン性・コスト・計算の分離」を優先した</strong>設計です。クラウド時代には後者が市場で勝ちました。一方で、ミリ秒単位の更新や点検索が本当に必要な用途は、今でも OTF の守備範囲外です。</p>
+</div>
+
+<h3 id="vs-dwh"><span class="sec">4.4</span>クラウド DWH（Snowflake ／ BigQuery）との関係</h3>
+<p>内部アーキテクチャはよく似ています（イミュータブルな列指向ファイル＋トランザクショナルなメタデータ）。違いは、<strong>仕様が公開されているか</strong>と、<strong>データの所有権が誰にあるか</strong>です。現在は DWH 側も Iceberg テーブルを読み書きできるようになり、DWH は「OTF を読み書きするエンジンの一つ」という位置づけに近づいています。Snowflake が Polaris を、Databricks が Unity Catalog を OSS 化したのは、この流れの中でカタログ層の主導権を取りにいく動きと見ることができます。</p>
+</section>

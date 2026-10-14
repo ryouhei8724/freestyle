@@ -1,0 +1,209 @@
+<section class="chapter" id="ch2" data-no="02" data-toc="歴史的経緯">
+<div class="chapter-title"><span class="no">02</span><h2>歴史的経緯</h2></div>
+
+<p>OTF は突然現れたものではありません。Hadoop 以来、「安いストレージに置いた大量のファイルを、どうすればテーブルとして正しく扱えるか」という問題に対して、何度も解き方が試されてきました。まず全体の流れを俯瞰してから、時代ごとに見ていきます。</p>
+
+<!-- figure:timeline -->
+
+<h3 id="hive"><span class="sec">2.1</span>Hadoop と Hive：「ディレクトリ = テーブル」（2006年〜）</h3>
+
+<p>Google の GFS／MapReduce 論文（2003／2004年）をもとに Hadoop が生まれました。MapReduce を Java で書くのはつらいので、Facebook が SQL で書ける <strong>Hive</strong> を作ります（2008年に OSS 化）。Hive のテーブルモデルは非常に単純です。</p>
+
+<span class="code-label">Hive テーブルのディレクトリ構成</span>
+<pre><code>/warehouse/sales.db/orders/          <span class="c">← テーブル = ディレクトリ</span>
+    dt=2024-06-01/                   <span class="c">← パーティション = サブディレクトリ</span>
+        part-00000.parquet
+        part-00001.parquet
+    dt=2024-06-02/
+        ...</code></pre>
+
+<ul>
+<li>スキーマとパーティションの一覧は <strong>Hive Metastore（HMS、裏側は RDBMS）</strong>に入る</li>
+<li>どのファイルがテーブルに含まれるかは、<strong>ディレクトリを listing した結果</strong>で決まる</li>
+<li>schema-on-read（読むときにスキーマを当てる）</li>
+</ul>
+
+<p>この単純さと、「HMS さえ読めばどのエンジンからも読める」という開放性のおかげで、Hive、Spark、Presto、Impala などが同じデータを共有できました。<strong>HMS と Hive テーブルは事実上の標準になり、OTF の祖先</strong>にあたります。OTF が後に解決する問題の多くは、このモデルの限界から生まれています。</p>
+
+<h3 id="parquet"><span class="sec">2.2</span>列指向ファイルの登場：Parquet と ORC（2013年〜）</h3>
+
+<p>テキスト、CSV、SequenceFile、Avro といった行指向の形式は、分析クエリには遅い形式でした。Google の <strong>Dremel 論文（VLDB 2010）</strong>を受けて、Twitter と Cloudera が <strong>Parquet</strong> を、Hortonworks と Facebook が <strong>ORC</strong> を、どちらも2013年に作ります。</p>
+
+<!-- figure:parquet -->
+
+<p>主な特徴は次のとおりです。</p>
+<ul>
+<li><strong>列単位で読める</strong>（projection pushdown）。必要な列だけを I/O する</li>
+<li>辞書エンコーディング、RLE／bit-packing、delta encoding、Snappy／ZSTD による圧縮</li>
+<li><strong>min/max 統計による述語プッシュダウン</strong>で、Row Group やページを丸ごとスキップできる</li>
+<li>Dremel 由来の repetition／definition level で、ネストした構造も列指向で格納できる</li>
+</ul>
+
+<p>ただ、この記事の文脈で重要なのは、Parquet の<strong>限界</strong>のほうです。</p>
+<ol>
+<li><strong>1ファイルで閉じている</strong>。複数のファイルを束ねた「テーブル」の概念がない</li>
+<li><strong>イミュータブル</strong>。footer が末尾にある構造なので、追記も部分更新もできず、更新は書き直しになる</li>
+<li><strong>統計はファイルを開かないと読めない</strong>。ファイルが10万個あれば、footer を読むための GET も10万回かかる</li>
+</ol>
+
+<div class="callout">
+<span class="label">POINT</span>
+<p>Parquet はファイル内のスキャン効率を解決しましたが、<strong>ファイル群をテーブルとして管理する部分は Hive の素朴なモデルのまま</strong>でした。この空白を埋めたのが OTF です。また、OTF は Parquet を置き換えるものではなく、<strong>Parquet の上に乗る</strong>ものです。Iceberg、Delta Lake、Hudi のデータファイルは、基本的に Parquet です。</p>
+</div>
+
+<p>なお、2016年にはメモリ上の列指向形式である Apache Arrow も登場しました。ディスク上は Parquet、メモリ上は Arrow という組み合わせは、いまの分析エンジンの標準的な構成です。</p>
+
+<h3 id="hive-limits"><span class="sec">2.3</span>Hive テーブルの限界（OTF が生まれた直接の理由）</h3>
+
+<!-- figure:hive-s3 -->
+
+<ol>
+<li><strong>原子性がない</strong>。書き込みジョブが途中で落ちると、中途半端なファイルが残って読み手に見える。複数パーティションへの書き込みも非原子的</li>
+<li><strong>分離性がない</strong>。書き込み中に読むと途中の状態が見える。<code>INSERT OVERWRITE</code> の最中に、空のパーティションが見えることもある</li>
+<li><strong>listing のコスト</strong>。クエリ計画のたびに全パーティションのディレクトリを listing する。S3 の LIST は1リクエスト最大1000キーで遅く、数万パーティションだと計画だけで数分かかる。HMS もパーティション数が増えると耐えられない</li>
+<li><strong>S3 との相性が悪い</strong>
+  <ul>
+  <li>Hadoop のコミットプロトコルは「一時ディレクトリに書いてから rename」で原子性を担保していた。しかし S3 の rename は「コピー＋削除」で、遅くて非原子的</li>
+  <li>S3 の LIST は<strong>2020年12月まで結果整合性</strong>だったので、書いたはずのファイルが見えないことがあった。Netflix は独自の S3 コミッタを作り、AWS は EMRFS で DynamoDB を使って整合性を補っていた</li>
+  </ul>
+</li>
+<li><strong>更新・削除ができない</strong>。1行消すのにもパーティションを丸ごと書き直す。GDPR（2018年施行）の削除要求や、CDC の取り込みが非常に重い</li>
+<li><strong>スキーマ進化が危険</strong>。列を名前か位置で識別するため、次のような事故が起きる（<a href="#fig-schema-evolution">第3章の図</a>も参照）
+  <ul>
+  <li>rename すると、古いファイルの列が NULL になる</li>
+  <li>drop してから同名の列を add すると、<strong>古いデータが復活する</strong></li>
+  <li>位置で識別している場合、列の順序を変えると値がずれる</li>
+  </ul>
+</li>
+<li><strong>パーティションがユーザーに露出している</strong>。<code>dt</code> という文字列列を別に持ち、クエリでも <code>WHERE dt = ...</code> と明示しないとフルスキャンになる。粒度を日から時間に変えるにはテーブルの作り直しが必要</li>
+<li><strong>小さなファイル問題</strong>。細かい書き込みでファイルが増え、listing と読み取りがさらに遅くなる</li>
+<li><strong>ファイル単位の統計がない</strong>。統計はパーティション単位でしかなく、しばしば古いので、ファイルのスキップはパーティション単位が限界</li>
+</ol>
+
+<p>Hive ACID（2014年〜、Hive 3 で標準化）も解決を試みました。base／delta ディレクトリとコンパクションで更新を実現しましたが、Hive のトランザクションマネージャ前提で ORC 専用だったため、他のエンジンからは扱いにくいものでした。そこで、<strong>エンジンに依存しない解決</strong>が求められるようになります。</p>
+
+<h3 id="approaches"><span class="sec">2.4</span>解き方の分岐：3つのアプローチ（2012〜2017年）</h3>
+
+<div class="tbl wide">
+<table>
+<thead><tr><th>アプローチ</th><th>代表</th><th>考え方</th></tr></thead>
+<tbody>
+<tr><th>(A) 専用ストレージエンジンを作る</th><td>HBase、<strong>Apache Kudu</strong></td><td>更新もスキャンも得意なサーバを作る</td></tr>
+<tr><th>(B) クローズドなクラウド DWH に任せる</th><td>Redshift、BigQuery、<strong>Snowflake</strong></td><td>全部ベンダーが面倒を見る</td></tr>
+<tr><th>(C) ファイルの上にメタデータ層を作る</th><td><strong>Hudi、Iceberg、Delta Lake</strong></td><td>サーバを持たず、ファイルとメタデータの規約で解く</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- figure:approaches -->
+
+<h4>(A) Apache Kudu（Cloudera、2015年発表、2016年に Apache TLP）</h4>
+
+<p>当時の Hadoop 界隈には次のようなジレンマがありました。</p>
+<ul>
+<li><strong>HDFS ＋ Parquet</strong>：スキャンは速いが、更新できない</li>
+<li><strong>HBase</strong>：ランダムな読み書きは速いが、スキャンが遅い</li>
+</ul>
+<p>リアルタイム分析にはこの両方が必要だったため、「ストリームは HBase に書き、定期的に HDFS へ移し、ビューでマージする」という <strong>Lambda アーキテクチャ</strong>が使われていましたが、非常に複雑でした。</p>
+
+<p>Kudu は「Fast Analytics on Fast Data」を掲げ、<strong>主キー付きの列指向ストレージで、行単位の insert／update／delete を数ミリ秒で行い、しかもスキャンも速い</strong>ことを目指しました。主に Impala と組み合わせて使われます。</p>
+
+<!-- figure:kudu -->
+
+<p>技術的には優れた設計でしたが、主流にはなりませんでした。よく挙げられる理由は次のとおりです。</p>
+<ul>
+<li>常駐サーバとローカルディスクが前提で、<strong>計算と保存が密結合</strong>している。クラウドの「オブジェクトストレージ＋計算の分離」という潮流と逆向きだった</li>
+<li>データは Kudu の内部形式なので、<strong>Kudu API を経由しないと読めない</strong>（エンジン中立ではない）</li>
+<li>3重レプリケーション、リバランス、ノード障害対応といったクラスタ運用が必要</li>
+<li>Hadoop／Cloudera のエコシステム自体が縮小した</li>
+</ul>
+
+<p>ただし、Kudu の「base ＋ delta を書いて、後でコンパクションする」という発想は、<strong>OTF の Merge-on-Read（Hudi MoR、Iceberg の delete file、Delta の Deletion Vector、Paimon の LSM）として、オブジェクトストレージ上で再実装されています</strong>。Kudu は OTF の対照例として理解すると分かりやすいです（Cloudera CDP の中などで現役ではあります）。</p>
+
+<h4>(B) Snowflake などのクラウド DWH</h4>
+
+<p>Snowflake（2014年頃に登場）は、データを S3 上の<strong>イミュータブルな独自形式の列指向ファイル（micro-partition）</strong>として保存します。そして「どの micro-partition がテーブルを構成するか」と列ごとの min/max 統計を、<strong>トランザクショナルなメタデータストア（FoundationDB）</strong>に持ちます。更新は「新しいファイルを書いてメタデータを切り替える」方式で、タイムトラベルやゼロコピークローンもここから実現されています。</p>
+
+<div class="callout">
+<span class="label">POINT</span>
+<p><strong>これは OTF とほぼ同じ発想です。</strong>違いは、すべてがクローズドなことです。形式は非公開で、Snowflake のエンジンからしか読めません。見方を変えると、<strong>OTF は Snowflake 的なアーキテクチャをオープン仕様にしたもの</strong>とも言えます。</p>
+</div>
+
+<h4>(C) 三大 OTF の誕生</h4>
+
+<div class="tbl xwide">
+<table>
+<thead><tr><th></th><th>発祥</th><th>動機</th></tr></thead>
+<tbody>
+<tr><th>Apache Hudi</th><td>Uber、2016年（2017年 OSS、2020年 Apache TLP）</td><td>MySQL や Kafka からデータレイクへの反映に数時間〜1日かかっていた。<strong>upsert と増分処理</strong>（変わったレコードだけを処理する）が欲しかった。名前は <em>Hadoop Upserts Deletes and Incrementals</em> の略</td></tr>
+<tr><th>Apache Iceberg</th><td>Netflix、2017年（Ryan Blue、Dan Weeks。2018年 Apache incubator、2020年 TLP）</td><td>S3 上の巨大な Hive テーブルで、listing の遅さ、結果整合性による正しさの問題、スキーマ進化のバグに苦しんでいた。<strong>テーブルの正しさとスケールを根本から解決する仕様</strong>を、最初からエンジン非依存の「仕様先行」で設計した</td></tr>
+<tr><th>Delta Lake</th><td>Databricks、2017年に社内製品化 → 2019年4月 OSS、同年10月 Linux Foundation</td><td>Spark ユーザーのデータレイクが「データの沼（data swamp）」になっていた。ジョブが失敗するとデータが壊れ、ストリーミングとバッチの整合が取れない。Spark Structured Streaming と密に統合された</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>興味深いのは、<strong>3つの組織がほぼ同時期に、独立して、同じコア設計にたどり着いた</strong>ことです。コア設計とは「イミュータブルなファイル＋テーブルを構成するファイルのログ＋アトミックなコミット」です。オブジェクトストレージと列指向ファイルという前提から見ると、これが自然な解だったことがうかがえます。</p>
+
+<h3 id="lakehouse"><span class="sec">2.5</span>Lakehouse の提唱（2020〜2021年）</h3>
+
+<p>Databricks は Delta Lake の論文（VLDB 2020）と <strong>Lakehouse 論文（CIDR 2021）</strong>で、次のように主張しました。</p>
+<ul>
+<li>従来は「データレイク（生データ・ML 用）→ ETL → DWH（BI 用）」という<strong>2層構成</strong>だった。この構成には、データの二重持ち、鮮度の遅れ、コスト、ロックイン、ML から DWH のデータを効率よく読めないといった問題がある</li>
+<li>OTF（ACID とメタデータ）に、キャッシュ、データレイアウトの最適化、高速なエンジンを組み合わせれば、<strong>データレイク上で直接 BI まで賄える</strong></li>
+<li><strong>オープン形式のデータを1コピーだけ持ち、BI、ML、ストリーミングといった複数のワークロードで共有する</strong></li>
+</ul>
+
+<!-- figure:lakehouse -->
+
+<h3 id="convergence"><span class="sec">2.6</span>フォーマット戦争と収束（2022年〜）</h3>
+
+<div class="tbl xwide">
+<table>
+<thead><tr><th>時期</th><th>出来事</th></tr></thead>
+<tbody>
+<tr><th>2022</th><td>Delta Lake 2.0 で、それまで Databricks 限定だった機能（OPTIMIZE／ZORDER など）を OSS 化。Snowflake と Google BigLake が Iceberg 対応を発表</td></tr>
+<tr><th>2023</th><td>Microsoft Fabric が OneLake の標準形式に Delta を採用。Delta 3.0 の <strong>UniForm</strong>（Delta で書くと Iceberg／Hudi のメタデータも併せて生成）。メタデータを相互変換する OneTable（のちの <strong>Apache XTable</strong>）が登場</td></tr>
+<tr><th>2024年6月</th><td>同じ週に3つの発表が重なる：Snowflake が <strong>Polaris Catalog</strong>（Iceberg REST カタログ、のちの Apache Polaris）を発表、Databricks が <strong>Tabular（Iceberg 創始者の会社）の買収</strong>を発表（10億ドル超と報道）、Databricks が <strong>Unity Catalog を OSS 化</strong></td></tr>
+<tr><th>2024年8月／11月</th><td>S3 が<strong>条件付き書き込み</strong>（If-None-Match ／ If-Match）に対応し、put-if-absent や compare-and-swap が S3 単体でできるようになる</td></tr>
+<tr><th>2024年12月</th><td><strong>AWS S3 Tables</strong>（Iceberg のマネージドテーブル、自動コンパクション付き）。Hudi 1.0</td></tr>
+<tr><th>2025年</th><td>Databricks が Neon、Snowflake が Crunchy Data（どちらも Postgres）を買収し、OLTP 側の取り込みも進む。9月に <strong>Iceberg 1.10.0 で format v3 が一般提供</strong>（Deletion Vector、行リネージ、Variant 型、地理空間型、デフォルト値など）。同じ9月に <strong>Delta Lake 4.0</strong>（カタログ管理テーブルのプレビュー、Variant、型の拡張、Delta Connect）</td></tr>
+<tr><th>2026年</th><td>2月に <strong>Apache Polaris が Apache のトップレベルプロジェクト（TLP）に昇格</strong>。4月に <strong>DuckLake 1.0</strong>。5月に Iceberg 1.11.0 がリリース。8月に Amazon Redshift が Iceberg v3 テーブルの読み書きに対応するなど、エンジン側の v3 対応が広がる。Iceberg v4 の策定が進行中</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>2026年時点の勢力図（筆者の見立て）は次のとおりです。</p>
+<ul>
+<li><strong>Iceberg</strong> は、エンジン間・ベンダー間の相互運用の<strong>事実上の標準</strong>になった。Snowflake、AWS（Athena／EMR／Glue／Redshift／S3 Tables）、BigQuery、Databricks（Unity Catalog 経由）、Trino、Flink、DuckDB、ClickHouse、PyIceberg、iceberg-rust など、対応先が圧倒的に広い</li>
+<li><strong>Delta Lake</strong> は、Databricks と Microsoft Fabric の内部で支配的で、導入実績も大きい</li>
+<li><strong>Hudi</strong> は、upsert の多い CDC パイプラインで根強い</li>
+<li><strong>Paimon</strong>（Flink Table Store から発展、2024年に Apache TLP）は、Flink 中心のストリーミング upsert で使われる</li>
+<li>争点は「どのフォーマットか」から<strong>「どのカタログか」に移った</strong>。コミットの調停、アクセス制御、認証情報の払い出しはカタログが握るためで、ロックインの源泉もカタログ側に移りつつある</li>
+</ul>
+
+<h3 id="chronology"><span class="sec">2.7</span>詳細年表</h3>
+
+<ul class="timeline">
+<li><span class="yr">2003–04</span>Google の GFS 論文、MapReduce 論文</li>
+<li class="key"><span class="yr">2006</span>Hadoop（HDFS ＋ MapReduce）</li>
+<li><span class="yr">2008</span>Hive が OSS 化（2010年に Apache TLP）。Hive Metastore がテーブル情報の共通基盤に</li>
+<li><span class="yr">2009</span>Spark が UC Berkeley AMPLab で始まる（2013年に Databricks 創業、2014年に Apache TLP）</li>
+<li><span class="yr">2010</span>Dremel 論文（VLDB 2010）</li>
+<li><span class="yr">2011</span>RCFile</li>
+<li><span class="yr">2012</span>Impala 発表、Amazon Redshift 発表</li>
+<li class="key"><span class="yr">2013</span>Parquet（Twitter ＋ Cloudera）、ORC（Hortonworks ＋ Facebook）</li>
+<li><span class="yr">2014</span>Snowflake 登場、Hive ACID</li>
+<li><span class="yr">2015</span>Apache Kudu 発表（2016年に Apache TLP）</li>
+<li class="key"><span class="yr">2016</span>Uber で Hudi が生まれる（2017年 OSS）。Apache Arrow</li>
+<li class="key"><span class="yr">2017</span>Netflix で Iceberg が生まれる。Databricks Delta（社内製品）</li>
+<li><span class="yr">2018</span>Iceberg が Apache incubator 入り。GDPR 施行</li>
+<li class="key"><span class="yr">2019</span>Delta Lake が OSS 化（4月）、Linux Foundation へ（10月）。Hudi が Apache incubator 入り</li>
+<li><span class="yr">2020</span>Iceberg（5月）と Hudi（6月）が Apache TLP に。Delta Lake 論文（VLDB）。S3 が強い整合性に（12月）</li>
+<li><span class="yr">2021</span>Lakehouse 論文（CIDR）。Iceberg format v2（行レベル削除）。Tabular、Onehouse 創業</li>
+<li><span class="yr">2022</span>Delta Lake 2.0 で全機能を OSS 化。Snowflake・BigLake が Iceberg 対応</li>
+<li><span class="yr">2023</span>Microsoft Fabric が Delta を採用。Delta UniForm。OneTable（のちの Apache XTable）。Paimon が Apache incubator 入り（2024年に TLP）</li>
+<li class="key"><span class="yr">2024</span>Databricks が Tabular 買収、Snowflake が Polaris 発表、Unity Catalog OSS 化（6月）。S3 条件付き書き込み（8月・11月）。S3 Tables、Hudi 1.0（12月）</li>
+<li class="key"><span class="yr">2025</span>Iceberg 1.10.0 で format v3 が一般提供（9月）。Delta Lake 4.0（9月）。DuckLake 発表（5月）</li>
+<li><span class="yr">2026</span>Apache Polaris が TLP に（2月）。DuckLake 1.0（4月）。Iceberg 1.11.0（5月）。Iceberg v4 の策定が進行中</li>
+</ul>
+</section>

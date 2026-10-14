@@ -1,0 +1,26 @@
+<section class="chapter" id="ch5" data-no="05" data-toc="優位性">
+<div class="chapter-title"><span class="no">05</span><h2>OTF の優位性まとめ</h2></div>
+
+<ol>
+<li><strong>オブジェクトストレージ上での ACID</strong>。ジョブが失敗しても、書き込み中に読まれても壊れないデータレイクになる</li>
+<li><strong>ストレージと計算の分離、マルチエンジン</strong>。1つのデータを Spark で ETL し、Trino で BI、Flink でストリーミング、DuckDB でローカル分析、といった使い方ができる。データのコピーが要らない</li>
+<li><strong>ロックインの回避</strong>。データは Parquet と公開仕様のメタデータなので、エンジンやベンダーを後から乗り換えられる</li>
+<li><strong>メタデータのスケーラビリティ</strong>。listing が要らず、ファイル単位の統計によるデータスキップが効く</li>
+<li><strong>安全なスキーマ進化とパーティション進化</strong>。列の改名や削除、パーティション粒度の変更が、データの書き直しなしにできる</li>
+<li><strong>タイムトラベル、ロールバック、ブランチ</strong>。ML の再現性、監査、障害時の巻き戻し、WAP による品質ゲートに使える</li>
+<li><strong>行レベルの DML</strong>。MERGE／UPDATE／DELETE で、CDC の取り込みや GDPR の削除に対応できる</li>
+<li><strong>ストリーミングとバッチの統合</strong>。同じテーブルに exactly-once で書き込み、増分で読める</li>
+<li><strong>コスト</strong>。オブジェクトストレージは安く、計算は使う分だけ払えばよい</li>
+</ol>
+
+<span class="code-label">タイムトラベルとロールバックの例（Spark SQL）</span>
+<pre><code><span class="c">-- Delta Lake</span>
+SELECT * FROM orders VERSION AS OF 41;
+SELECT * FROM orders TIMESTAMP AS OF '2024-06-01 00:00:00';
+RESTORE TABLE orders TO VERSION AS OF 41;
+
+<span class="c">-- Apache Iceberg（VERSION AS OF にはスナップショット ID を渡す）</span>
+SELECT * FROM orders VERSION AS OF 5781947118336215154;
+SELECT * FROM orders TIMESTAMP AS OF '2024-06-01 00:00:00';
+CALL cat.system.rollback_to_snapshot('db.orders', 5781947118336215154);</code></pre>
+</section>

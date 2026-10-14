@@ -1,0 +1,39 @@
+<section class="chapter" id="ch1" data-no="01" data-toc="用語の位置づけ">
+<div class="chapter-title"><span class="no">01</span><h2>用語の位置づけ：層で整理する</h2></div>
+
+<p>Parquet、Apache Kudu、Databricks、Delta Lake、Apache Iceberg は、よく並べて語られますが、それぞれ<strong>担当する層が違うもの</strong>です。最初にここを分けておくと、後の話が理解しやすくなります。</p>
+
+<!-- figure:layers -->
+
+<div class="cards">
+<div class="card"><span class="kind">ファイルフォーマット</span><h4>Parquet</h4><p>「1ファイルの中身」の規約。列指向で圧縮効率が高い。<strong>テーブルという概念は持たない</strong>。</p></div>
+<div class="card"><span class="kind">テーブルフォーマット</span><h4>Iceberg ／ Delta Lake ／ Hudi</h4><p>「どのファイル群が1つのテーブルを構成し、どう変化してきたか」の規約。これが OTF。</p></div>
+<div class="card"><span class="kind">ストレージエンジン</span><h4>Apache Kudu</h4><p>列指向ストレージに行単位の高速更新を持たせた常駐の分散システム。OTF とは別のアプローチ。</p></div>
+<div class="card"><span class="kind">企業・プラットフォーム</span><h4>Databricks</h4><p>Spark の作者たちが創業。Delta Lake の生みの親で、2024年に Iceberg 創始者の会社 Tabular を買収し、両方の陣営に関わる立場になった。</p></div>
+</div>
+
+<div class="tbl wide">
+<table>
+<thead><tr><th>用語</th><th>正体</th><th>一言</th></tr></thead>
+<tbody>
+<tr><th>Parquet</th><td>ファイルフォーマット</td><td>「1ファイルの中身」の規約。テーブルという概念は持たない</td></tr>
+<tr><th>Iceberg ／ Delta Lake ／ Hudi</th><td>テーブルフォーマット</td><td>「どのファイル群が1つのテーブルを構成し、どう変化してきたか」の規約</td></tr>
+<tr><th>Apache Kudu</th><td>分散ストレージエンジン（サーバ）</td><td>列指向ストレージに行単位の高速更新を持たせた常駐システム。OTF とは別のアプローチ</td></tr>
+<tr><th>Databricks</th><td>企業／SaaS</td><td>Delta Lake の生みの親。2024年に Tabular を買収し、Iceberg 陣営にも深く関わる</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>RDBMS にたとえると、次のように対応します。</p>
+<ul>
+<li>Parquet ≒ データページのフォーマット</li>
+<li>OTF ≒ WAL ＋ MVCC ＋ システムカタログの一部</li>
+<li>カタログ ≒ 名前空間と、コミットの調停役</li>
+<li>計算エンジン ≒ オプティマイザとエグゼキュータ</li>
+</ul>
+
+<div class="callout">
+<span class="label">ONE-LINE SUMMARY</span>
+<p>OTF の世界は、<strong>データベースを層ごとに分解して、各層を標準化・オープン化したもの</strong>です。この見方は第4章の「RDBMS との違い」でもう一度詳しく扱います。</p>
+</div>
+</section>
