@@ -3,7 +3,8 @@
 Parquet・Hive・Apache Kudu・Snowflake・Delta Lake・Apache Iceberg・Apache Hudi・Databricks を一本の歴史でつなぎ、オープンテーブルフォーマット（OTF）の仕組みと、従来の DB・データレイクとの違いを図解で解説する技術者向けの1ページサイトです。全9章・図解19点。
 
 - 配信：Cloudflare Workers（静的アセット）。Worker 名は `open-table-format-guide`
-- 予定URL：`https://open-table-format-guide.ryouhei8724.workers.dev/`（配備後に有効）
+- 予定URL：`https://open-table-format-guide.ryouhei8724.workers.dev/`（配備と Access 設定の後に有効）
+- 公開範囲：本人限定（Cloudflare Access）
 - 技術確認日：2026-10-14（`scripts/build.mjs` の `TECH_DATE`）
 
 ## 構成
@@ -31,12 +32,16 @@ npm run build    # dist/client を生成
 npm run deploy   # wrangler deploy --config wrangler.static.jsonc
 ```
 
-`account_id` は公開リポジトリに置かないため `wrangler.static.jsonc` から省いています。
+公開範囲は**本人限定**です。既存の個人サイトと同じく、Cloudflare Access で Worker 全体を保護します。`account_id` は設定ファイルに書かず、Workers Builds では接続先のアカウントを使います。手元から配備する場合は `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` を設定します。プレビューURLは無効です（`preview_urls: false`）。
 
-- **Workers Builds（推奨）**：Cloudflare ダッシュボードの Workers & Pages → 作成 → リポジトリをインポートで、このリポジトリを接続します。ビルドコマンドは `npm run build`、デプロイコマンドは `npm run deploy`、環境変数は `NODE_VERSION=24.19.0` にします。
-- **手元から**：`CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` を設定して `npm run deploy` を実行します。
+### 配備の手順（初回）
 
-本人限定で公開する場合は、既存サイトと同じく、最初の配備の後に Worker 全体を Cloudflare Access で保護し、保護を確認してから workers.dev の URL を共有します。プレビューURLは無効です（`preview_urls: false`）。
+1. Cloudflare ダッシュボードの Workers & Pages → 作成 → リポジトリをインポートで、このリポジトリの `main` を接続する。ビルドコマンドは `npm run build`、デプロイコマンドは `npm run deploy`、環境変数は `NODE_VERSION=24.19.0`。
+2. 最初の配備は `workers_dev: false` のまま行われ、URL はまだ開かない。
+3. Worker `open-table-format-guide` 全体を Cloudflare Access で保護し、許可するのが本人だけであることを確認する。
+4. `wrangler.static.jsonc` の `workers_dev` を `true` に変えて `main` に push する。Workers Builds が再配備し、`https://open-table-format-guide.ryouhei8724.workers.dev/` が開く。
+5. 未ログインのブラウザで Access のログイン画面が出ること、ログイン後にページと図が表示されることを確かめる。
+6. コンテンツ管理（openclaw-growth-command-center）のブランチ `claude/dreamy-davinci-osx1wx` を `main` にマージして、台帳への登録を反映する。
 
 ## 内容の更新
 

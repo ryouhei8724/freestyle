@@ -4,7 +4,9 @@
   // account_id は公開リポジトリに置かないため省略。Workers Builds では接続先アカウント、
   // 手元からの wrangler deploy では CLOUDFLARE_ACCOUNT_ID 環境変数で指定する。
   "compatibility_date": "2026-05-15",
-  "workers_dev": true,
+  // 本人限定のため、初回は URL を無効にして配備する。Worker 全体を Cloudflare Access で
+  // 保護したことを確認してから true に変える（README の「配備の手順」）。
+  "workers_dev": false,
   "preview_urls": false,
   "assets": {
     "directory": "./dist/client",
