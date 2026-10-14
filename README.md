@@ -2,8 +2,8 @@
 
 Parquet・Hive・Apache Kudu・Snowflake・Delta Lake・Apache Iceberg・Apache Hudi・Databricks を一本の歴史でつなぎ、オープンテーブルフォーマット（OTF）の仕組みと、従来の DB・データレイクとの違いを図解で解説する技術者向けの1ページサイトです。全9章・図解19点。
 
-- 配信：Cloudflare Workers（静的アセット）。Worker 名は `open-table-format-guide`
-- 予定URL：`https://open-table-format-guide.ryouhei8724.workers.dev/`（配備と Access 設定の後に有効）
+- 配信：Cloudflare Pages（ダッシュボードからの手動アップロード）。プロジェクト名は `open-table-format-guide`
+- 予定URL：`https://open-table-format-guide.pages.dev/`（アップロードと Access 設定の後に有効）
 - 公開範囲：本人限定（Cloudflare Access）
 - 技術確認日：2026-10-14（`scripts/build.mjs` の `TECH_DATE`）
 
@@ -24,24 +24,33 @@ Parquet・Hive・Apache Kudu・Snowflake・Delta Lake・Apache Iceberg・Apache 
 
 ## 構築と配備
 
-Node.js 24.19.0 で次の順に実行します。外部の依存は wrangler だけです。
+公開範囲は**本人限定**（Cloudflare Access）です。配備は Cloudflare Pages へのダッシュボードからの手動アップロード（Direct Upload）で行います。
+
+### 配信ファイルを作る
+
+Node.js 24.19.0 で次を実行すると `dist/client/` に配信ファイル一式（`index.html`・`404.html`・`_headers`・`favicon.svg`）ができます。ページ本体は CSS・スクリプト・図をすべて埋め込んだ `index.html` 1つです。
 
 ```sh
 npm ci
-npm run build    # dist/client を生成
-npm run deploy   # wrangler deploy --config wrangler.static.jsonc
+npm run build
+cd dist/client && zip -r ../../open-table-format-guide-upload.zip .
 ```
 
-公開範囲は**本人限定**です。既存の個人サイトと同じく、Cloudflare Access で Worker 全体を保護します。`account_id` は設定ファイルに書かず、Workers Builds では接続先のアカウントを使います。手元から配備する場合は `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` を設定します。プレビューURLは無効です（`preview_urls: false`）。
+### Cloudflare Pages に手動でアップロードする（初回）
 
-### 配備の手順（初回）
+1. ダッシュボードの Workers & Pages → 作成（Create application）→ Pages → 「ファイルをドラッグ＆ドロップ」（Drag and drop your files）を選ぶ。
+2. プロジェクト名を `open-table-format-guide` にして、zip（または `dist/client` フォルダ）をアップロードし、デプロイする。URL は `https://<プロジェクト名>.pages.dev/`。名前が使われていると末尾に文字が付くので、実際の URL を控える。
+3. すぐに Zero Trust → Access → Applications でセルフホスト型のアプリを追加し、`open-table-format-guide.pages.dev`（プレビュー用に `*.open-table-format-guide.pages.dev` も）を本人のメールアドレスだけに許可する。
+4. 未ログインのブラウザで Access のログイン画面が出ること、ログイン後にページと図が表示されることを確かめる。
+5. コンテンツ管理（openclaw-growth-command-center）のブランチ `claude/dreamy-davinci-osx1wx` を `main` にマージして、台帳への登録を反映する。URL が予定と違う場合は先に台帳を直す。
 
-1. Cloudflare ダッシュボードの Workers & Pages → 作成 → リポジトリをインポートで、このリポジトリの `main` を接続する。ビルドコマンドは `npm run build`、デプロイコマンドは `npm run deploy`、環境変数は `NODE_VERSION=24.19.0`。
-2. 最初の配備は `workers_dev: false` のまま行われ、URL はまだ開かない。
-3. Worker `open-table-format-guide` 全体を Cloudflare Access で保護し、許可するのが本人だけであることを確認する。
-4. `wrangler.static.jsonc` の `workers_dev` を `true` に変えて `main` に push する。Workers Builds が再配備し、`https://open-table-format-guide.ryouhei8724.workers.dev/` が開く。
-5. 未ログインのブラウザで Access のログイン画面が出ること、ログイン後にページと図が表示されることを確かめる。
-6. コンテンツ管理（openclaw-growth-command-center）のブランチ `claude/dreamy-davinci-osx1wx` を `main` にマージして、台帳への登録を反映する。
+### 更新するとき
+
+`npm run build` で作り直し、同じプロジェクトの「新しいデプロイを作成」から zip をアップロードします。Direct Upload のプロジェクトは、後から Git 連携に切り替えられません。
+
+### 参考：Workers への配備
+
+`wrangler.static.jsonc` は Cloudflare Workers（静的アセット）向けの設定で、`npm run deploy` で配備できます（`CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` が必要）。手動アップロードでは使いません。
 
 ## 内容の更新
 
