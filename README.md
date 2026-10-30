@@ -2,7 +2,7 @@
 
 ## llm-forecast
 
-オープンウェイトのLLMがClaude Opus 5.5の水準に並ぶ時期を、モデルの大きさ・公開時期・スコアの3軸で示したページです（2026年10月14日時点）。
+オープンウェイトのLLMがClaude Opus 5.5の水準に並ぶ時期を、モデルの大きさ・公開時期・スコアの3軸で示したページです（2026年10月30日時点、Artificial Analysis総合指数v5）。
 
 - `llm-forecast/index.html` ページ本体
 - `llm-forecast/data/models.csv` モデルごとのスコア・公開日・総パラメータ数（出典URLつき）
@@ -11,6 +11,12 @@
 - `llm-forecast/vendor/` d3 v7.9.0（ISCライセンス）
 
 CSVを書き換えてpushすると、図と表もその値で描き直されます。
+
+手動アップロード用の1ファイル版（`llm-forecast-upload/index.html`）は、CSVを書き換えたあとリポジトリのルートで次を実行すると作り直せます。
+
+```
+python3 scripts/build_single_file.py
+```
 
 ### Cloudflareへのデプロイ
 

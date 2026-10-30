@@ -112,33 +112,29 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
 </style>
 <script id="data-models" type="text/csv">
 model,lab,kind,released,score,params_b,active_b,tier,tier_label,label,note,source
-Claude Opus 4.7,Anthropic,クローズド,2026-04-16,41,非公開,,api,クラウドAPIのみ,,max設定・スコアはAAの推定値,https://artificialanalysis.ai/models/comparisons/gpt-5-5-vs-claude-opus-4-7
-GPT-5.5,OpenAI,クローズド,2026-04-23,38,非公開,,api,クラウドAPIのみ,,xhigh設定,https://artificialanalysis.ai/models/comparisons/gpt-5-5-vs-claude-opus-4-7
-Claude Opus 4.8,Anthropic,クローズド,2026-05-28,42,非公開,,api,クラウドAPIのみ,Opus 4.8,max設定・日付はAAの記事日,https://artificialanalysis.ai/models/claude-opus-4-8
-Claude Opus 5,Anthropic,クローズド,2026-07-24,51,非公開,,api,クラウドAPIのみ,,max設定・スコアは二次情報,https://blog.margrop.net/en/post/aa-intelligence-index-october-2026-leaderboard-deep-dive-and-model-selection-guide/
-Kimi K3,Moonshot,オープン,2026-07-27,44,2800,104,dc,データセンター級,Kimi K3,max設定・本来の形式で約1.5TB,https://artificialanalysis.ai/models/comparisons/claude-opus-5-5-vs-kimi-k3
-Grok 4.6,SpaceXAI,クローズド,2026-08-12,44,非公開,,api,クラウドAPIのみ,,high設定,https://artificialanalysis.ai/models/grok-4-6
-Qwen3.8-27B,Alibaba,オープン,2026-08-12,34,27,27,gpu24,24〜32GB GPU,Qwen3.8-27B,xhigh設定・4bitで約18GB,https://artificialanalysis.ai/models/releases/comparisons/glm-5-3-vs-qwen3-8-27b
-DeepSeek V4 Pro,DeepSeek,オープン,2026-08-13,36,1600,,dc,データセンター級,,0813版・max設定,https://artificialanalysis.ai/models/deepseek-v4-pro
-GLM-5.3,Z.ai,オープン,2026-08-14,45,753,,ws512,512GB級,GLM-5.3,max設定・2bitで239GB・4bitは推定で約450GB,https://artificialanalysis.ai/models/releases/comparisons/glm-5-3-vs-qwen3-8-27b
-GLM-5.3-Flash,Z.ai,オープン,2026-08-26,42,320,18,ws128,128GB級,GLM-5.3-Flash,3bitで128GBに収まる,https://artificialanalysis.ai/models/comparisons/glm-5-3-flash-vs-qwen3-8-27b-low
-Claude Fable 5.1,Anthropic,クローズド,2026-09-01,53,非公開,,api,クラウドAPIのみ,,max設定・スコアは二次情報,https://blog.margrop.net/en/post/aa-intelligence-index-october-2026-leaderboard-deep-dive-and-model-selection-guide/
-GPT-6 Astra,OpenAI,クローズド,2026-09-03,53,非公開,,api,クラウドAPIのみ,,max設定,https://artificialanalysis.ai/articles/gemini-4-argon-google-top-three-labs
-DeepSeek V4.1 Flash,DeepSeek,オープン,2026-09-10,39,552,,ws512,512GB級,,max設定・規模は552Bと763Bの報告あり,https://artificialanalysis.ai/models/deepseek-v4-1-flash
-Grok 4.7,SpaceXAI,クローズド,2026-09-21,46,非公開,,api,クラウドAPIのみ,,high設定,https://artificialanalysis.ai/models/grok-4-7-high
-Claude Opus 5.5,Anthropic,クローズド,2026-09-22,58,非公開,,api,クラウドAPIのみ,Opus 5.5,max設定,https://artificialanalysis.ai/models/comparisons/claude-opus-5-5-vs-kimi-k3
-Claude Sonnet 5.5,Anthropic,クローズド,2026-09-28,56,非公開,,api,クラウドAPIのみ,,max設定・スコアは二次情報,https://blog.margrop.net/en/post/aa-intelligence-index-october-2026-leaderboard-deep-dive-and-model-selection-guide/
-GPT-6.1 Sol,OpenAI,クローズド,2026-09-29,52,非公開,,api,クラウドAPIのみ,,max設定,https://artificialanalysis.ai/articles/gemini-4-argon-google-top-three-labs
-Gemini 4 Argon,Google,クローズド,2026-09-30,53,非公開,,api,クラウドAPIのみ,,high設定（同モデルの最上位）,https://artificialanalysis.ai/articles/gemini-4-argon-google-top-three-labs
-Muse Wonder,Meta,クローズド,2026-10-12,52,非公開,,api,クラウドAPIのみ,,MetaのAPIで提供,https://artificialanalysis.ai/articles/muse-wonder
-Muse Wonder Full,Meta,クローズド,2026-10-12,56,非公開,,api,クラウドAPIのみ,,Muse Code利用者のみ,https://artificialanalysis.ai/articles/muse-wonder
+Qwen3.8-27B,Alibaba,オープン,2026-08-12,20,27,27,gpu24,24〜32GB GPU,Qwen3.8-27B,xhigh設定・旧版v4.3では34・4bitで約18GB,https://artificialanalysis.ai/models/open-source
+GLM-5.3,Z.ai,オープン,2026-08-14,32,753,,ws512,512GB級,GLM-5.3,max設定・旧版v4.3では45・4bitは推定で約450GB,https://geotoolbox.ai/blog/chinese-ai-models-compared
+GPT-6 Astra,OpenAI,クローズド,2026-09-03,57,非公開,,api,クラウドAPIのみ,,max設定・旧版v4.3では53,https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v5
+Grok 4.7,SpaceXAI,クローズド,2026-09-21,35,非公開,,api,クラウドAPIのみ,,high設定・旧版v4.3では46,https://artificialanalysis.ai/models/releases/grok-4-7
+Claude Opus 5.5,Anthropic,クローズド,2026-09-22,58,非公開,,api,クラウドAPIのみ,Opus 5.5,max設定・旧版v4.3でも58,https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v5
+MiMo-V2.6-Pro,Xiaomi,オープン,2026-09-22,30,1020,42,dc,データセンター級,,旧版v4.3では46・スコアは二次情報・4bitで約550GB,https://geotoolbox.ai/blog/chinese-ai-models-compared
+Claude Sonnet 5.5,Anthropic,クローズド,2026-09-28,54,非公開,,api,クラウドAPIのみ,,旧版v4.3では56・スコアは単一の報道,https://x.com/TheRundownAI/status/2115489453611356402
+GPT-6.1 Sol,OpenAI,クローズド,2026-09-29,55,非公開,,api,クラウドAPIのみ,,max設定・旧版v4.3では52,https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v5
+Gemini 4 Argon,Google,クローズド,2026-09-30,50,非公開,,api,クラウドAPIのみ,,high設定・旧版v4.3では53,https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v5
+Muse Wonder,Meta,クローズド,2026-10-12,43,非公開,,api,クラウドAPIのみ,,旧版v4.3の52と報道された変化幅（−9）から算出,https://news.ycombinator.com/item?id=50268868
+Muse Wonder Full,Meta,クローズド,2026-10-12,50,非公開,,api,クラウドAPIのみ,,旧版v4.3の56と報道された変化幅（−6）から算出・Muse Code利用者のみ,https://news.ycombinator.com/item?id=50268868
+Muse Spark Open,Meta,オープン,2026-10-15,25,816,42,ws512,512GB級,Muse Spark Open,xhigh設定・旧版v4.3では39・4bitで約440GB,https://artificialanalysis.ai/models/muse-spark-open
+DeepSeek V4.1 Flash 1017,DeepSeek,オープン,2026-10-17,32,552,,ws512,512GB級,DeepSeek V4.1 Flash,max設定・旧版v4.3では45・4bitで約300GB,https://artificialanalysis.ai/models/deepseek-v4-1-flash-1017
+Kimi K3.1 Pro,Moonshot,オープン,2026-10-23,46,2800,104,dc,データセンター級,Kimi K3.1 Pro,旧版v4.3では55・重みは11月4日公開予定,https://artificialanalysis.ai/models/kimi-k3-1-pro
+Gemini 4 Carbon,Google,クローズド,2026-10-28,59,非公開,,api,クラウドAPIのみ,Gemini 4 Carbon,high設定・現在の首位・一部の利用者のみ提供,https://artificialanalysis.ai/evaluations/artificial-analysis-intelligence-index
+Mistral Large 4,Mistral,オープン,2026-10-29,26,1050,52,dc,データセンター級,Mistral Large 4,high設定・旧版v4.3では38（プレビュー版）,https://x.com/ArtificialAnlys/status/2115820547103952925
 </script>
 <script id="data-forecast" type="text/csv">
-tier,tier_label,tier_short,hardware,start_model,start_score,as_of,reach_early,reach_mid,reach_late,target_score,reach_label,range_label,months_label,basis
-dc,オープン最上位（データセンター級）,データセンター級,H200やGB300を8基積んだサーバー,GLM-5.3,45,2026-10-14,2027-01-15,2027-02-15,2027-03-31,58,2027年2月頃,2027年1〜3月,約3〜5か月,Epoch AIの分析ではオープン最上位は最前線に平均約4か月（厳しめの基準で約6か月）遅れる。Opus 5.5の公開（9月22日）に4〜6か月を足した。
-ws512,512GB級ワークステーション,512GB級,Mac Studio M5 Ultra 512GBなど（4bit圧縮）,GLM-5.3,45,2026-10-14,2027-04-15,2027-05-31,2027-07-15,58,2027年5月頃,2027年4〜7月,約6〜9か月,最初に58点へ届くオープンモデルは1〜3Tパラメータ級で512GBに載らない可能性が高い。750B級で同じ性能が出るまでの時間と4bit圧縮での劣化を上乗せした。
-ws128,128GB級マシン,128GB級,M5 Max Mac Studio・DGX Spark・Ryzen AI Max+ 395など,GLM-5.3-Flash,42,2026-10-14,2027-08-01,2027-10-01,2027-12-31,58,2027年10月頃,2027年8〜12月,約10〜14か月,GLM-5.3-Flash（320B）は最上位と3点差まで来ている。ただし小さいモデルは長い作業や知識量で体感が劣りやすいため余裕を見た。
-gpu24,24〜32GB GPU 1枚,24〜32GB GPU,RTX 4090/5090・32GB以上のMacなど,Qwen3.8-27B,34,2026-10-14,2028-01-15,2028-05-15,2028-10-15,58,2028年5月頃,2028年1〜10月,約15〜24か月,Qwen3.8-27BはまだOpus 4.8（42点）にも届かない。パラメータ数が少ないと覚えられる知識量に上限があり、知識はWeb検索などで補う前提になる。
+tier,tier_label,tier_short,hardware,start_model,start_score,as_of,reach_early,reach_mid,reach_late,target_model,target_score,reach_label,range_label,months_label,basis
+dc,オープン最上位（データセンター級）,データセンター級,H200やGB300を8基積んだサーバー,Kimi K3.1 Pro,46,2026-10-30,2027-02-15,2027-04-01,2027-05-31,Claude Opus 5.5,58,2027年4月頃,2027年2〜5月,約4〜7か月,v5ではKimi K3.1 Pro（重みは11月4日公開予定）が46点でOpus 5.5と12点差。旧版v4.3では3点差だったが、非公開の問題が増えたv5で差が広がった。オープン最上位は最前線に平均約4か月遅れるというEpoch AIの分析に、この差の広がりを上乗せした。
+ws512,512GB級ワークステーション,512GB級,Mac Studio M5 Ultra 512GBなど（4bit圧縮）,DeepSeek V4.1 Flash 1017,32,2026-10-30,2027-05-01,2027-07-15,2027-09-30,Claude Opus 5.5,58,2027年7月頃,2027年5〜9月,約6〜11か月,512GBに載る最上位はDeepSeek V4.1 Flash 1017とGLM-5.3（ともに32点）で、2.8TのKimi K3.1 Proより14点低い。最上位の性能が750B級以下のモデルに降りてくるまでの時間と、4bit圧縮での劣化を見込んだ。
+ws128,128GB級マシン,128GB級,M5 Max Mac Studio・DGX Spark・Ryzen AI Max+ 395など,GLM-5.3-Flash（推定）,30,2026-10-30,2027-10-01,2027-12-15,2028-03-31,Claude Opus 5.5,58,2027年12月頃,2027年10月〜2028年3月,約11〜17か月,GLM-5.3-Flash（320B）はv5の値が未公表のため、兄弟モデルGLM-5.3の下がり幅（45→32）から約30点と推定した。小さいモデルほどv5で点が下がっており、長い作業や知識量で不利なため余裕を見た。
+gpu24,24〜32GB GPU 1枚,24〜32GB GPU,RTX 4090/5090・32GB以上のMacなど,Qwen3.8-27B,20,2026-10-30,2028-04-01,2028-09-01,2029-03-31,Claude Opus 5.5,58,2028年9月頃,2028年4月〜2029年3月,約17〜29か月,Qwen3.8-27Bはv5で20点（旧版v4.3では34点）と、指数の改定で最も大きく下がった層。パラメータ数が少ないと覚えられる知識量に上限があり、Opus 5.5並みには最も時間がかかる。
 </script>
 <script>
 /*
@@ -332,6 +328,9 @@ THIS SOFTWARE.
 .lx-table td { padding: var(--cds-pad-xs) var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); vertical-align: top; }
 .lx-table .num { text-align: right; }
 .lx-table td.wrap { min-width: 16rem; }
+#lx-tbl-forecast td { white-space: normal; }
+#lx-tbl-forecast td.wrap { min-width: 9rem; }
+#lx-tbl-forecast td.wide { min-width: 20rem; }
 .lx-table td.nowrap { white-space: nowrap; }
 .lx-list { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: var(--cds-gap-xs); font-size: var(--cds-font-size-body); line-height: 1.7; max-width: 52rem; }
 .lx-fail { display: flex; align-items: center; justify-content: center; gap: var(--cds-gap-xs); min-height: 420px; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
@@ -343,7 +342,7 @@ THIS SOFTWARE.
 <div class="lx" id="lx-root">
   <header class="lx-head" id="top">
     <h1 class="lx-title">ローカルLLM到達予測</h1>
-    <p class="lx-lede">オープンウェイトの最上位は<b class="dash-skeleton" data-source="forecast" data-field="start_score" data-where="tier=dc">—</b>点、Claude Opus 5.5は<b class="dash-skeleton" data-source="models" data-field="score" data-where="model=Claude Opus 5.5">—</b>点です。手元のマシンでOpus 5.5並みのモデルが動くのは、<span class="dash-skeleton" data-source="forecast" data-field="tier_short" data-where="tier=ws512">—</span>で<b class="dash-skeleton" data-source="forecast" data-field="reach_label" data-where="tier=ws512">—</b>、<span class="dash-skeleton" data-source="forecast" data-field="tier_short" data-where="tier=gpu24">—</span>で<b class="dash-skeleton" data-source="forecast" data-field="reach_label" data-where="tier=gpu24">—</b>と予想します。</p>
+    <p class="lx-lede">総合指数（v5）の首位はGemini 4 Carbonの<b class="dash-skeleton" data-source="models" data-field="score" data-where="model=Gemini 4 Carbon">—</b>点、Claude Opus 5.5は<b class="dash-skeleton" data-source="models" data-field="score" data-where="model=Claude Opus 5.5">—</b>点です。オープンウェイトの最上位は<span class="dash-skeleton" data-source="forecast" data-field="start_model" data-where="tier=dc">—</span>の<b class="dash-skeleton" data-source="forecast" data-field="start_score" data-where="tier=dc">—</b>点で、手元のマシンでOpus 5.5並みのモデルが動くのは、<span class="dash-skeleton" data-source="forecast" data-field="tier_short" data-where="tier=ws512">—</span>で<b class="dash-skeleton" data-source="forecast" data-field="reach_label" data-where="tier=ws512">—</b>、<span class="dash-skeleton" data-source="forecast" data-field="tier_short" data-where="tier=gpu24">—</span>で<b class="dash-skeleton" data-source="forecast" data-field="reach_label" data-where="tier=gpu24">—</b>と予想します。</p>
   </header>
 
   <section class="lx-section" id="tiles">
@@ -383,7 +382,7 @@ THIS SOFTWARE.
 
   <section class="lx-card" id="chart">
     <h2 class="lx-h2">モデルの大きさ・時期・スコア</h2>
-    <p class="lx-note">縦軸はArtificial Analysisの総合指数、横軸は公開日です。円の面積は総パラメータ数で、色は動かせるマシンの区分（濃いほど大きなマシンが必要）を表します。クローズドモデルは規模が非公開のため菱形で示しています。</p>
+    <p class="lx-note">縦軸はArtificial Analysisの総合指数（v5）、横軸は公開日です。円の面積は総パラメータ数で、色は動かせるマシンの区分（濃いほど大きなマシンが必要）を表します。クローズドモデルは規模が非公開のため菱形で示しています。</p>
     <div class="lx-legend" data-source="models forecast"></div>
     <div class="lx-panels" data-source="models forecast frontier">
       <figure class="lx-panel">
@@ -436,9 +435,11 @@ THIS SOFTWARE.
   <section class="lx-section" id="notes">
     <h2 class="lx-h2">読み方と前提</h2>
     <ul class="lx-list">
-      <li>縦軸はArtificial Analysis総合指数の現行版（v4.3系）です。版が変わると数値は比べられないため、この版の値が見つかったモデルだけを載せています。</li>
-      <li>一部のスコアは二次情報から取っています（表の備考を参照）。DeepSeek V4.1 Flashは規模の報告が分かれています。</li>
-      <li>予想の線と帯はClaudeの推定です。オープンモデルは最前線に数か月遅れて追いつくというEpoch AIの分析と、各マシンのメモリに載るモデルの大きさをもとにしています。</li>
+      <li>縦軸はArtificial Analysis総合指数の最新版（v5、2026年10月27日改定）です。v5では非公開の問題が6割を占めるようになり、特にオープンモデルの点が大きく下がりました。旧版（v4.3）の数値とは比べられないため、v5の値が見つかったモデルだけを載せています。そのため実績は8月以降のモデルに限られます。</li>
+      <li>Muse WonderとMuse Wonder Fullは、旧版からの変化幅を伝える報道をもとに算出した値です。Claude Sonnet 5.5、GLM-5.3、MiMo-V2.6-Proの値は二次情報です（表の備考を参照）。</li>
+      <li>Kimi K3.1 Proはオープンウェイトとして発表されていますが、重みの公開は11月4日の予定です。</li>
+      <li>128GB級の起点にしたGLM-5.3-Flashはv5の値が未公表のため、予想の内訳では推定値を使っています。</li>
+      <li>予想の線と帯はClaudeの推定です。オープンモデルは最前線に数か月遅れて追いつくというEpoch AIの分析と、v5で広がった差、各マシンのメモリに載るモデルの大きさをもとにしています。</li>
       <li>総合点が並んでも、長い作業や仕上がりの質の体感が追いつくまでには、さらに数か月かかる可能性があります。</li>
       <li>ローカルで動かす場合は圧縮（量子化）が必要で、その分スコアより性能が下がります。</li>
     </ul>
@@ -447,7 +448,7 @@ THIS SOFTWARE.
   <section class="lx-section" id="sources">
     <h2 class="lx-h2">出典</h2>
     <ul class="lx-list lx-sources" id="lx-sources"></ul>
-    <p class="lx-note">2026年10月14日時点の公開情報をもとに作成しました。予想の部分はClaude（Anthropic）による推定です。データはこのHTMLファイルの先頭近く（id="data-models" と id="data-forecast" のブロック）にCSV形式で入っています。</p>
+    <p class="lx-note">2026年10月30日時点の公開情報をもとに作成しました。予想の部分はClaude（Anthropic）による推定です。データはこのHTMLファイルの先頭近く（id="data-models" と id="data-forecast" のブロック）にCSV形式で入っています。</p>
   </section>
 </div>
 
@@ -526,7 +527,7 @@ dash.calc('frontier', {
       const tr = el(tb, 'tr');
       if (keyCol) tr.setAttribute('data-key', String(r[keyCol]));
       cols.forEach((c) => {
-        const cls = numeric.has(c) ? 'num' : (c === 'note' || c === 'basis' || c === 'hardware') ? 'wrap' : 'nowrap';
+        const cls = numeric.has(c) ? 'num' : c === 'basis' ? 'wrap wide' : (c === 'note' || c === 'hardware') ? 'wrap' : 'nowrap';
         el(tr, 'td', cls, r[c] == null ? '' : String(r[c]));
       });
     });
@@ -918,7 +919,8 @@ dash.calc('frontier', {
     if (!models.length || !forecast.length || frontier.length < 2) { chartState('error'); return; }
 
     const asOf = parseDay(forecast[0].as_of);
-    const target = models.filter((r) => !r.open).reduce((a, b) => (b.s > a.s ? b : a));
+    const named = models.find((r) => r.model === forecast[0].target_model);
+    const target = named || models.filter((r) => !r.open).reduce((a, b) => (b.s > a.s ? b : a));
     const lo = Math.floor((Math.min(d3.min(models, (r) => r.s), d3.min(forecast, (r) => r.start)) - 2) / 10) * 10;
     const hi = Math.ceil((Math.max(d3.max(frontier, (r) => r.high), d3.max(models, (r) => r.s)) + 2) / 5) * 5;
 
@@ -935,6 +937,7 @@ dash.calc('frontier', {
 (function () {
   const list = document.getElementById('lx-sources');
   const fixed = [
+    ['Artificial Analysis：総合指数v5の発表', 'https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v5'],
     ['Artificial Analysis：総合指数の評価方法', 'https://artificialanalysis.ai/methodology/intelligence-benchmarking'],
     ['Epoch AI：オープンモデルは最前線に約4か月遅れる', 'https://epoch.ai/data-insights/open-closed-eci-gap'],
     ['Unsloth：GLM-5.3をローカルで動かすためのメモリ要件', 'https://unsloth.ai/docs/models/glm-5.3']

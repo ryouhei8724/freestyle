@@ -1,21 +1,17 @@
 model,lab,kind,released,score,params_b,active_b,tier,tier_label,label,note,source
-Claude Opus 4.7,Anthropic,クローズド,2026-04-16,41,非公開,,api,クラウドAPIのみ,,max設定・スコアはAAの推定値,https://artificialanalysis.ai/models/comparisons/gpt-5-5-vs-claude-opus-4-7
-GPT-5.5,OpenAI,クローズド,2026-04-23,38,非公開,,api,クラウドAPIのみ,,xhigh設定,https://artificialanalysis.ai/models/comparisons/gpt-5-5-vs-claude-opus-4-7
-Claude Opus 4.8,Anthropic,クローズド,2026-05-28,42,非公開,,api,クラウドAPIのみ,Opus 4.8,max設定・日付はAAの記事日,https://artificialanalysis.ai/models/claude-opus-4-8
-Claude Opus 5,Anthropic,クローズド,2026-07-24,51,非公開,,api,クラウドAPIのみ,,max設定・スコアは二次情報,https://blog.margrop.net/en/post/aa-intelligence-index-october-2026-leaderboard-deep-dive-and-model-selection-guide/
-Kimi K3,Moonshot,オープン,2026-07-27,44,2800,104,dc,データセンター級,Kimi K3,max設定・本来の形式で約1.5TB,https://artificialanalysis.ai/models/comparisons/claude-opus-5-5-vs-kimi-k3
-Grok 4.6,SpaceXAI,クローズド,2026-08-12,44,非公開,,api,クラウドAPIのみ,,high設定,https://artificialanalysis.ai/models/grok-4-6
-Qwen3.8-27B,Alibaba,オープン,2026-08-12,34,27,27,gpu24,24〜32GB GPU,Qwen3.8-27B,xhigh設定・4bitで約18GB,https://artificialanalysis.ai/models/releases/comparisons/glm-5-3-vs-qwen3-8-27b
-DeepSeek V4 Pro,DeepSeek,オープン,2026-08-13,36,1600,,dc,データセンター級,,0813版・max設定,https://artificialanalysis.ai/models/deepseek-v4-pro
-GLM-5.3,Z.ai,オープン,2026-08-14,45,753,,ws512,512GB級,GLM-5.3,max設定・2bitで239GB・4bitは推定で約450GB,https://artificialanalysis.ai/models/releases/comparisons/glm-5-3-vs-qwen3-8-27b
-GLM-5.3-Flash,Z.ai,オープン,2026-08-26,42,320,18,ws128,128GB級,GLM-5.3-Flash,3bitで128GBに収まる,https://artificialanalysis.ai/models/comparisons/glm-5-3-flash-vs-qwen3-8-27b-low
-Claude Fable 5.1,Anthropic,クローズド,2026-09-01,53,非公開,,api,クラウドAPIのみ,,max設定・スコアは二次情報,https://blog.margrop.net/en/post/aa-intelligence-index-october-2026-leaderboard-deep-dive-and-model-selection-guide/
-GPT-6 Astra,OpenAI,クローズド,2026-09-03,53,非公開,,api,クラウドAPIのみ,,max設定,https://artificialanalysis.ai/articles/gemini-4-argon-google-top-three-labs
-DeepSeek V4.1 Flash,DeepSeek,オープン,2026-09-10,39,552,,ws512,512GB級,,max設定・規模は552Bと763Bの報告あり,https://artificialanalysis.ai/models/deepseek-v4-1-flash
-Grok 4.7,SpaceXAI,クローズド,2026-09-21,46,非公開,,api,クラウドAPIのみ,,high設定,https://artificialanalysis.ai/models/grok-4-7-high
-Claude Opus 5.5,Anthropic,クローズド,2026-09-22,58,非公開,,api,クラウドAPIのみ,Opus 5.5,max設定,https://artificialanalysis.ai/models/comparisons/claude-opus-5-5-vs-kimi-k3
-Claude Sonnet 5.5,Anthropic,クローズド,2026-09-28,56,非公開,,api,クラウドAPIのみ,,max設定・スコアは二次情報,https://blog.margrop.net/en/post/aa-intelligence-index-october-2026-leaderboard-deep-dive-and-model-selection-guide/
-GPT-6.1 Sol,OpenAI,クローズド,2026-09-29,52,非公開,,api,クラウドAPIのみ,,max設定,https://artificialanalysis.ai/articles/gemini-4-argon-google-top-three-labs
-Gemini 4 Argon,Google,クローズド,2026-09-30,53,非公開,,api,クラウドAPIのみ,,high設定（同モデルの最上位）,https://artificialanalysis.ai/articles/gemini-4-argon-google-top-three-labs
-Muse Wonder,Meta,クローズド,2026-10-12,52,非公開,,api,クラウドAPIのみ,,MetaのAPIで提供,https://artificialanalysis.ai/articles/muse-wonder
-Muse Wonder Full,Meta,クローズド,2026-10-12,56,非公開,,api,クラウドAPIのみ,,Muse Code利用者のみ,https://artificialanalysis.ai/articles/muse-wonder
+Qwen3.8-27B,Alibaba,オープン,2026-08-12,20,27,27,gpu24,24〜32GB GPU,Qwen3.8-27B,xhigh設定・旧版v4.3では34・4bitで約18GB,https://artificialanalysis.ai/models/open-source
+GLM-5.3,Z.ai,オープン,2026-08-14,32,753,,ws512,512GB級,GLM-5.3,max設定・旧版v4.3では45・4bitは推定で約450GB,https://geotoolbox.ai/blog/chinese-ai-models-compared
+GPT-6 Astra,OpenAI,クローズド,2026-09-03,57,非公開,,api,クラウドAPIのみ,,max設定・旧版v4.3では53,https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v5
+Grok 4.7,SpaceXAI,クローズド,2026-09-21,35,非公開,,api,クラウドAPIのみ,,high設定・旧版v4.3では46,https://artificialanalysis.ai/models/releases/grok-4-7
+Claude Opus 5.5,Anthropic,クローズド,2026-09-22,58,非公開,,api,クラウドAPIのみ,Opus 5.5,max設定・旧版v4.3でも58,https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v5
+MiMo-V2.6-Pro,Xiaomi,オープン,2026-09-22,30,1020,42,dc,データセンター級,,旧版v4.3では46・スコアは二次情報・4bitで約550GB,https://geotoolbox.ai/blog/chinese-ai-models-compared
+Claude Sonnet 5.5,Anthropic,クローズド,2026-09-28,54,非公開,,api,クラウドAPIのみ,,旧版v4.3では56・スコアは単一の報道,https://x.com/TheRundownAI/status/2115489453611356402
+GPT-6.1 Sol,OpenAI,クローズド,2026-09-29,55,非公開,,api,クラウドAPIのみ,,max設定・旧版v4.3では52,https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v5
+Gemini 4 Argon,Google,クローズド,2026-09-30,50,非公開,,api,クラウドAPIのみ,,high設定・旧版v4.3では53,https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v5
+Muse Wonder,Meta,クローズド,2026-10-12,43,非公開,,api,クラウドAPIのみ,,旧版v4.3の52と報道された変化幅（−9）から算出,https://news.ycombinator.com/item?id=50268868
+Muse Wonder Full,Meta,クローズド,2026-10-12,50,非公開,,api,クラウドAPIのみ,,旧版v4.3の56と報道された変化幅（−6）から算出・Muse Code利用者のみ,https://news.ycombinator.com/item?id=50268868
+Muse Spark Open,Meta,オープン,2026-10-15,25,816,42,ws512,512GB級,Muse Spark Open,xhigh設定・旧版v4.3では39・4bitで約440GB,https://artificialanalysis.ai/models/muse-spark-open
+DeepSeek V4.1 Flash 1017,DeepSeek,オープン,2026-10-17,32,552,,ws512,512GB級,DeepSeek V4.1 Flash,max設定・旧版v4.3では45・4bitで約300GB,https://artificialanalysis.ai/models/deepseek-v4-1-flash-1017
+Kimi K3.1 Pro,Moonshot,オープン,2026-10-23,46,2800,104,dc,データセンター級,Kimi K3.1 Pro,旧版v4.3では55・重みは11月4日公開予定,https://artificialanalysis.ai/models/kimi-k3-1-pro
+Gemini 4 Carbon,Google,クローズド,2026-10-28,59,非公開,,api,クラウドAPIのみ,Gemini 4 Carbon,high設定・現在の首位・一部の利用者のみ提供,https://artificialanalysis.ai/evaluations/artificial-analysis-intelligence-index
+Mistral Large 4,Mistral,オープン,2026-10-29,26,1050,52,dc,データセンター級,Mistral Large 4,high設定・旧版v4.3では38（プレビュー版）,https://x.com/ArtificialAnlys/status/2115820547103952925

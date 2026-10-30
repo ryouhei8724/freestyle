@@ -205,6 +205,9 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
 .lx-table td { padding: var(--cds-pad-xs) var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); vertical-align: top; }
 .lx-table .num { text-align: right; }
 .lx-table td.wrap { min-width: 16rem; }
+#lx-tbl-forecast td { white-space: normal; }
+#lx-tbl-forecast td.wrap { min-width: 9rem; }
+#lx-tbl-forecast td.wide { min-width: 20rem; }
 .lx-table td.nowrap { white-space: nowrap; }
 .lx-list { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: var(--cds-gap-xs); font-size: var(--cds-font-size-body); line-height: 1.7; max-width: 52rem; }
 .lx-fail { display: flex; align-items: center; justify-content: center; gap: var(--cds-gap-xs); min-height: 420px; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
@@ -216,7 +219,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
 <div class="lx" id="lx-root">
   <header class="lx-head" id="top">
     <h1 class="lx-title">ローカルLLM到達予測</h1>
-    <p class="lx-lede">オープンウェイトの最上位は<b class="dash-skeleton" data-source="forecast" data-field="start_score" data-where="tier=dc">—</b>点、Claude Opus 5.5は<b class="dash-skeleton" data-source="models" data-field="score" data-where="model=Claude Opus 5.5">—</b>点です。手元のマシンでOpus 5.5並みのモデルが動くのは、<span class="dash-skeleton" data-source="forecast" data-field="tier_short" data-where="tier=ws512">—</span>で<b class="dash-skeleton" data-source="forecast" data-field="reach_label" data-where="tier=ws512">—</b>、<span class="dash-skeleton" data-source="forecast" data-field="tier_short" data-where="tier=gpu24">—</span>で<b class="dash-skeleton" data-source="forecast" data-field="reach_label" data-where="tier=gpu24">—</b>と予想します。</p>
+    <p class="lx-lede">総合指数（v5）の首位はGemini 4 Carbonの<b class="dash-skeleton" data-source="models" data-field="score" data-where="model=Gemini 4 Carbon">—</b>点、Claude Opus 5.5は<b class="dash-skeleton" data-source="models" data-field="score" data-where="model=Claude Opus 5.5">—</b>点です。オープンウェイトの最上位は<span class="dash-skeleton" data-source="forecast" data-field="start_model" data-where="tier=dc">—</span>の<b class="dash-skeleton" data-source="forecast" data-field="start_score" data-where="tier=dc">—</b>点で、手元のマシンでOpus 5.5並みのモデルが動くのは、<span class="dash-skeleton" data-source="forecast" data-field="tier_short" data-where="tier=ws512">—</span>で<b class="dash-skeleton" data-source="forecast" data-field="reach_label" data-where="tier=ws512">—</b>、<span class="dash-skeleton" data-source="forecast" data-field="tier_short" data-where="tier=gpu24">—</span>で<b class="dash-skeleton" data-source="forecast" data-field="reach_label" data-where="tier=gpu24">—</b>と予想します。</p>
   </header>
 
   <section class="lx-section" id="tiles">
@@ -256,7 +259,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
 
   <section class="lx-card" id="chart">
     <h2 class="lx-h2">モデルの大きさ・時期・スコア</h2>
-    <p class="lx-note">縦軸はArtificial Analysisの総合指数、横軸は公開日です。円の面積は総パラメータ数で、色は動かせるマシンの区分（濃いほど大きなマシンが必要）を表します。クローズドモデルは規模が非公開のため菱形で示しています。</p>
+    <p class="lx-note">縦軸はArtificial Analysisの総合指数（v5）、横軸は公開日です。円の面積は総パラメータ数で、色は動かせるマシンの区分（濃いほど大きなマシンが必要）を表します。クローズドモデルは規模が非公開のため菱形で示しています。</p>
     <div class="lx-legend" data-source="models forecast"></div>
     <div class="lx-panels" data-source="models forecast frontier">
       <figure class="lx-panel">
@@ -309,9 +312,11 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
   <section class="lx-section" id="notes">
     <h2 class="lx-h2">読み方と前提</h2>
     <ul class="lx-list">
-      <li>縦軸はArtificial Analysis総合指数の現行版（v4.3系）です。版が変わると数値は比べられないため、この版の値が見つかったモデルだけを載せています。</li>
-      <li>一部のスコアは二次情報から取っています（表の備考を参照）。DeepSeek V4.1 Flashは規模の報告が分かれています。</li>
-      <li>予想の線と帯はClaudeの推定です。オープンモデルは最前線に数か月遅れて追いつくというEpoch AIの分析と、各マシンのメモリに載るモデルの大きさをもとにしています。</li>
+      <li>縦軸はArtificial Analysis総合指数の最新版（v5、2026年10月27日改定）です。v5では非公開の問題が6割を占めるようになり、特にオープンモデルの点が大きく下がりました。旧版（v4.3）の数値とは比べられないため、v5の値が見つかったモデルだけを載せています。そのため実績は8月以降のモデルに限られます。</li>
+      <li>Muse WonderとMuse Wonder Fullは、旧版からの変化幅を伝える報道をもとに算出した値です。Claude Sonnet 5.5、GLM-5.3、MiMo-V2.6-Proの値は二次情報です（表の備考を参照）。</li>
+      <li>Kimi K3.1 Proはオープンウェイトとして発表されていますが、重みの公開は11月4日の予定です。</li>
+      <li>128GB級の起点にしたGLM-5.3-Flashはv5の値が未公表のため、予想の内訳では推定値を使っています。</li>
+      <li>予想の線と帯はClaudeの推定です。オープンモデルは最前線に数か月遅れて追いつくというEpoch AIの分析と、v5で広がった差、各マシンのメモリに載るモデルの大きさをもとにしています。</li>
       <li>総合点が並んでも、長い作業や仕上がりの質の体感が追いつくまでには、さらに数か月かかる可能性があります。</li>
       <li>ローカルで動かす場合は圧縮（量子化）が必要で、その分スコアより性能が下がります。</li>
     </ul>
@@ -320,7 +325,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
   <section class="lx-section" id="sources">
     <h2 class="lx-h2">出典</h2>
     <ul class="lx-list lx-sources" id="lx-sources"></ul>
-    <p class="lx-note">2026年10月14日時点の公開情報をもとに作成しました。予想の部分はClaude（Anthropic）による推定です。データは data/models.csv と data/forecast.csv にあります。</p>
+    <p class="lx-note">2026年10月30日時点の公開情報をもとに作成しました。予想の部分はClaude（Anthropic）による推定です。データは data/models.csv と data/forecast.csv にあります。</p>
   </section>
 </div>
 
@@ -399,7 +404,7 @@ dash.calc('frontier', {
       const tr = el(tb, 'tr');
       if (keyCol) tr.setAttribute('data-key', String(r[keyCol]));
       cols.forEach((c) => {
-        const cls = numeric.has(c) ? 'num' : (c === 'note' || c === 'basis' || c === 'hardware') ? 'wrap' : 'nowrap';
+        const cls = numeric.has(c) ? 'num' : c === 'basis' ? 'wrap wide' : (c === 'note' || c === 'hardware') ? 'wrap' : 'nowrap';
         el(tr, 'td', cls, r[c] == null ? '' : String(r[c]));
       });
     });
@@ -791,7 +796,8 @@ dash.calc('frontier', {
     if (!models.length || !forecast.length || frontier.length < 2) { chartState('error'); return; }
 
     const asOf = parseDay(forecast[0].as_of);
-    const target = models.filter((r) => !r.open).reduce((a, b) => (b.s > a.s ? b : a));
+    const named = models.find((r) => r.model === forecast[0].target_model);
+    const target = named || models.filter((r) => !r.open).reduce((a, b) => (b.s > a.s ? b : a));
     const lo = Math.floor((Math.min(d3.min(models, (r) => r.s), d3.min(forecast, (r) => r.start)) - 2) / 10) * 10;
     const hi = Math.ceil((Math.max(d3.max(frontier, (r) => r.high), d3.max(models, (r) => r.s)) + 2) / 5) * 5;
 
@@ -808,6 +814,7 @@ dash.calc('frontier', {
 (function () {
   const list = document.getElementById('lx-sources');
   const fixed = [
+    ['Artificial Analysis：総合指数v5の発表', 'https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v5'],
     ['Artificial Analysis：総合指数の評価方法', 'https://artificialanalysis.ai/methodology/intelligence-benchmarking'],
     ['Epoch AI：オープンモデルは最前線に約4か月遅れる', 'https://epoch.ai/data-insights/open-closed-eci-gap'],
     ['Unsloth：GLM-5.3をローカルで動かすためのメモリ要件', 'https://unsloth.ai/docs/models/glm-5.3']
