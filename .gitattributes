@@ -1,0 +1,2 @@
+# Windows でもシェルスクリプトが CRLF にならないよう、改行コードは LF に統一する
+* text=auto eol=lf

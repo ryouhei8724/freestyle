@@ -1,0 +1,10 @@
+# 練習用リポジトリの作成先（practice.sh start で作られる）
+/playground/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# エディタ
+*.swp
+*~
